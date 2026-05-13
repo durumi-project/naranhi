@@ -1,0 +1,437 @@
+[
+  {
+    "case_id": "SAMPLE-001",
+    "type_main": "CY",
+    "subtypes": [
+      "VB"
+    ],
+    "role_focus": "G",
+    "stage_focus": 7,
+    "school_level": "MS",
+    "applies_to": [
+      "SV-CY-G-4-MS",
+      "SV-CY-G-5-MS",
+      "SV-CY-G-7-MS"
+    ],
+    "keywords": [
+      "단톡방",
+      "별명",
+      "외모",
+      "카톡",
+      "한 달",
+      "거부",
+      "그만",
+      "학폭위",
+      "5호"
+    ],
+    "decision_date": "2024-05-15",
+    "court": "○○교육지원청 학교폭력대책심의위원회",
+    "case_number": "(가상) 학폭위 결정 2024-A-123",
+    "case_title_formal": "학교폭력 처분 결정",
+    "disposition_summary": "특별교육이수(5호 처분) 결정",
+    "friendly_title": "단톡방에서 별명으로 놀린 사건",
+    "friendly_summary": "교실 단체 카톡방에서 한 학생을 외모 관련 별명으로 약 6주간 반복적으로 부른 사건이에요. 그 친구가 명확히 그만해달라고 말한 이후에도 행위가 계속됐고, 결국 학교를 못 가는 상황까지 이르렀어요. 학교폭력으로 인정되어 신고 대상이 된 학생은 특별교육이수(5호 처분)를 받았어요.",
+    "recognition": "인정",
+    "category": "형사",
+    "sentence": "5호 처분",
+    "key_factors": [
+      "피해 학생의 명확한 거부 의사 표명 이후에도 행위가 지속됨",
+      "단체 채팅방이라는 공개적 성격으로 인한 모욕감 가중",
+      "피해 학생의 등교 거부·정신과 상담 등 정신적 피해 입증"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "지속성: 약 6주간 반복",
+      "공개성: 학급 단체방 다수 노출",
+      "사과 여부: 처분 전 진심 어린 사과로 처분 경감"
+    ]
+  },
+  {
+    "case_id": "SAMPLE-002",
+    "type_main": "PH",
+    "subtypes": [],
+    "role_focus": "G",
+    "stage_focus": 2,
+    "school_level": "MS",
+    "applies_to": [
+      "SV-PH-G-2-MS",
+      "SV-PH-G-2-HS"
+    ],
+    "keywords": [
+      "복도",
+      "어깨",
+      "장난",
+      "친한",
+      "쌍방",
+      "CCTV",
+      "경미"
+    ],
+    "decision_date": "2024-04-22",
+    "court": "○○교육지원청 학교폭력대책심의위원회",
+    "case_number": "(가상) 학폭위 결정 2024-B-045",
+    "case_title_formal": "학교폭력 사안 처리 결정",
+    "disposition_summary": "학교폭력 불인정 (자체해결 종결)",
+    "friendly_title": "복도에서 장난으로 어깨를 친 사건",
+    "friendly_summary": "쉬는 시간 복도에서 친한 친구 사이에 어깨를 부딪치며 장난을 주고받았던 일이 학교폭력으로 신고된 사건이에요. 평소 친밀한 친구 사이였다는 점, CCTV에서 한쪽만 일방적으로 한 게 아니라 서로 주고받았다는 점, 다친 정도가 가벼웠다는 점이 함께 고려되어 학교폭력으로는 인정되지 않았어요.",
+    "recognition": "불인정",
+    "category": "형사",
+    "sentence": "자체해결",
+    "key_factors": [
+      "평소 친밀한 친구 사이로 일상적 신체 접촉이 있었다는 점",
+      "CCTV와 목격자 진술로 일방적이 아닌 쌍방향적 장난임이 입증됨",
+      "신체적 피해 정도가 경미함",
+      "행위가 1회성이며 권력관계의 비대칭이 없었음"
+    ],
+    "not_recognized_reasons": [
+      "쌍방향적 장난으로 일방적 가해로 보기 어려움",
+      "지속성·반복성이 인정되지 않음",
+      "권력관계의 비대칭이 없음"
+    ],
+    "severity_factors": [
+      "CCTV 영상이 핵심 판단 근거",
+      "평소 친밀도 입증 자료가 결정적",
+      "목격자 진술의 일관성"
+    ]
+  },
+  {
+    "case_id": "SAMPLE-003",
+    "type_main": "OS",
+    "subtypes": [],
+    "role_focus": "G",
+    "stage_focus": 7,
+    "school_level": "ES",
+    "applies_to": [
+      "SV-OS-G-4-ES",
+      "SV-OS-G-7-ES"
+    ],
+    "keywords": [
+      "체육복",
+      "숨김",
+      "여러 명",
+      "5일",
+      "집단",
+      "초등",
+      "수업"
+    ],
+    "decision_date": "2024-06-10",
+    "court": "경기도교육청 학교폭력대책심의위원회",
+    "case_number": "(가상) 학폭위 결정 2024-C-078",
+    "case_title_formal": "학교폭력 처분 결정",
+    "disposition_summary": "사회봉사(4호) 및 학교봉사(3호) 결정",
+    "friendly_title": "체육복을 숨긴 사건",
+    "friendly_summary": "초등학교 6학년 학급에서 네 명의 학생이 한 학생의 체육복을 약 5일간 돌려가며 숨긴 사건이에요. 그 친구는 체육 수업에 참여하지 못하고 정서적으로 위축되어 상담까지 받게 됐어요. 학교폭력으로 인정되어 주도한 학생은 사회봉사(4호 처분), 함께한 세 명은 학교 봉사(3호 처분)를 받았어요.",
+    "recognition": "인정",
+    "category": "형사",
+    "sentence": "3~4호 처분",
+    "key_factors": [
+      "재물 임의 점유로 인한 실질적·정서적 피해",
+      "여러 명이 가담한 집단성",
+      "피해 학생의 수업 참여에 직접적 지장 발생",
+      "자진 반환이 없었던 점"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "가담 정도에 따라 처분 차등",
+      "사과 시점이 처분에 영향",
+      "의무교육 대상이라 9호 처분 불가"
+    ]
+  },
+  {
+    "case_id": "SAMPLE-004",
+    "type_main": "CY",
+    "subtypes": [],
+    "role_focus": "V",
+    "stage_focus": 9,
+    "school_level": "HS",
+    "applies_to": [
+      "SV-CY-V-1-HS",
+      "SV-CY-V-7-HS",
+      "SV-CY-V-9-HS"
+    ],
+    "keywords": [
+      "SNS",
+      "비공개",
+      "캡처",
+      "유포",
+      "단톡방",
+      "정보통신망법",
+      "휴학",
+      "정신과"
+    ],
+    "decision_date": "2024-08-30",
+    "court": "인천지방법원",
+    "case_number": "(가상) 2024고단5678",
+    "case_title_formal": "정보통신망이용촉진및정보보호등에관한법률위반(명예훼손)",
+    "disposition_summary": "징역 6월, 집행유예 2년 (학폭위 6호 처분 별도)",
+    "friendly_title": "SNS 비공개 사진을 단톡방에 유포한 사건",
+    "friendly_summary": "고등학생이 다른 학생의 비공개 SNS 게시물을 동의 없이 캡처해 학년 단체방 세 곳에 유포한 사건이에요. 피해 학생은 정신과 진단을 받고 휴학까지 이르렀어요. 학교폭력으로 인정되어 출석정지(6호 처분)가 결정됐고, 정보통신망법 위반으로 형사 절차도 함께 진행됐어요.",
+    "recognition": "인정",
+    "category": "형사·민사",
+    "sentence": "6호 + 형사",
+    "key_factors": [
+      "비공개 게시물의 무단 캡처·유포",
+      "디지털 흔적의 광범위한 확산성",
+      "피해자의 명시적 거부 의사 무시",
+      "학폭과 형사 절차의 병행"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "확산 범위가 처분 수위에 결정적",
+      "게시물의 사적 성격이 강할수록 가중",
+      "형사 절차 병행으로 변호사 조력 필요"
+    ]
+  },
+  {
+    "case_id": "SAMPLE-005",
+    "type_main": "CO",
+    "subtypes": [],
+    "role_focus": "G",
+    "stage_focus": 7,
+    "school_level": "MS",
+    "applies_to": [
+      "SV-CO-G-4-MS",
+      "SV-CO-G-7-MS"
+    ],
+    "keywords": [
+      "빵",
+      "강요",
+      "체육시간",
+      "셔틀",
+      "위압",
+      "3주",
+      "다수"
+    ],
+    "decision_date": "2024-05-28",
+    "court": "경기도교육청 학교폭력대책심의위원회",
+    "case_number": "(가상) 학폭위 결정 2024-D-156",
+    "case_title_formal": "학교폭력 처분 결정",
+    "disposition_summary": "학교에서의 봉사(3호) 결정",
+    "friendly_title": "체육시간 빵 강요 사건",
+    "friendly_summary": "중학생 세 명이 약 3주 동안 체육시간 직전마다 한 학생에게 매점에서 빵을 사오라고 반복적으로 요구한 사건이에요. 협박은 없었지만 여러 명이 함께 요구한 분위기 자체가 압박이 됐다는 점이 인정되어 학교폭력으로 판단됐고, 가담한 세 명 모두 학교 봉사(3호 처분)를 받았어요.",
+    "recognition": "일부인정",
+    "category": "형사",
+    "sentence": "3호 처분",
+    "key_factors": [
+      "다수가 함께 요구한 점이 위압으로 인정됨",
+      "약 3주간 반복된 점",
+      "경제적 손실이 동반된 점"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "명시적 협박이 없어 처분 수위는 낮은 편",
+      "가담자가 다수일 때 각자에게 처분 부과",
+      "자진 사과 및 비용 변상 시 처분 경감 가능"
+    ]
+  },
+  {
+    "case_id": "PR-006",
+    "type_main": "CY",
+    "subtypes": [
+      "VB"
+    ],
+    "role_focus": "G",
+    "stage_focus": 4,
+    "school_level": "HS",
+    "applies_to": [
+      "SV-CY-G-4-HS",
+      "SV-CY-G-7-HS"
+    ],
+    "keywords": [
+      "인스타",
+      "DM",
+      "욕설",
+      "고등학생",
+      "여러 번",
+      "차단"
+    ],
+    "decision_date": "2024-09-12",
+    "court": "○○교육지원청 학교폭력대책심의위원회",
+    "case_number": "(가상) 학폭위 결정 2024-E-234",
+    "case_title_formal": "학교폭력 처분 결정",
+    "disposition_summary": "출석정지(6호 처분) 결정",
+    "friendly_title": "인스타 DM으로 욕설을 보낸 사건",
+    "friendly_summary": "고등학생이 같은 학교 학생에게 인스타그램 다이렉트 메시지로 욕설을 약 2주간 보낸 사건이에요. 받는 학생이 차단했음에도 다른 계정으로 우회해 계속 보냈어요. 학교폭력으로 인정되어 출석정지(6호 처분)를 받았어요.",
+    "recognition": "인정",
+    "category": "형사",
+    "sentence": "6호 처분",
+    "key_factors": [
+      "차단 회피 행위가 거부 의사 무시로 평가됨",
+      "디지털 증거가 명확하게 보존됨",
+      "고등학생이라 9호 처분도 가능했으나 6호로 결정"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "차단 우회는 가중 사유",
+      "고등학교는 의무교육 아니라 처분 범위 넓음"
+    ]
+  },
+  {
+    "case_id": "PR-007",
+    "type_main": "CY",
+    "subtypes": [],
+    "role_focus": "B",
+    "stage_focus": 2,
+    "school_level": "HS",
+    "applies_to": [
+      "SV-CY-B-2-HS",
+      "SV-CY-B-7-HS"
+    ],
+    "keywords": [
+      "게임",
+      "보이스챗",
+      "쌍방",
+      "욕설",
+      "양측",
+      "고등학생"
+    ],
+    "decision_date": "2024-07-05",
+    "court": "○○교육지원청 학교폭력대책심의위원회",
+    "case_number": "(가상) 학폭위 결정 2024-F-189",
+    "case_title_formal": "학교폭력 처분 결정",
+    "disposition_summary": "쌍방 서면사과(1호) 결정",
+    "friendly_title": "온라인 게임 보이스챗 욕설 쌍방 사건",
+    "friendly_summary": "같은 학교 친구 두 명이 온라인 게임 보이스챗에서 서로 욕설을 주고받은 사건이에요. 양쪽 다 신고했고, 두 명 모두 학교폭력으로 인정되어 쌍방 1호 처분(서면사과)을 받았어요.",
+    "recognition": "인정",
+    "category": "형사",
+    "sentence": "쌍방 1호 처분",
+    "key_factors": [
+      "쌍방 가해·피해 관계가 동시에 인정됨",
+      "학교 외부 시간이지만 학생 간 관계가 학교생활에 영향",
+      "욕설 수위와 빈도가 양측 비슷함"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "쌍방 사건은 양측 책임을 함께 검토",
+      "먼저 시작한 사람에 대한 처분 가중 가능",
+      "자율적 화해 시 처분 경감"
+    ]
+  },
+  {
+    "case_id": "PR-008",
+    "type_main": "PH",
+    "subtypes": [
+      "VB"
+    ],
+    "role_focus": "G",
+    "stage_focus": 8,
+    "school_level": "MS",
+    "applies_to": [
+      "SV-PH-G-7-MS",
+      "SV-PH-G-8-MS"
+    ],
+    "keywords": [
+      "행정심판",
+      "7호",
+      "학급교체",
+      "불복",
+      "전치",
+      "치료"
+    ],
+    "decision_date": "2024-11-20",
+    "court": "서울특별시교육청 행정심판위원회",
+    "case_number": "(가상) 2024행심1234",
+    "case_title_formal": "학교폭력 처분 취소 청구",
+    "disposition_summary": "청구 기각 (원처분 7호 학급교체 유지)",
+    "friendly_title": "신체폭력 7호 처분 후 행정심판 사건",
+    "friendly_summary": "중학생이 친구를 폭행해 전치 2주의 상해를 입혔고, 학폭위에서 학급교체(7호 처분)가 결정됐어요. 신고를 받은 학생 측은 처분이 과하다고 보고 행정심판을 청구했지만, 행정심판위원회는 원처분을 유지했어요.",
+    "recognition": "인정",
+    "category": "형사",
+    "sentence": "7호 처분 유지",
+    "key_factors": [
+      "전치 2주 이상이라 자체해결 불가능",
+      "학폭위 처분의 재량 범위 내라고 인정됨",
+      "행정심판 청구 자체는 정당한 권리 행사"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "행정심판은 90일 이내 청구 가능",
+      "집행정지 함께 신청해야 처분 미뤄짐",
+      "원처분 유지율이 높은 편이므로 변호사 조력 권장"
+    ]
+  },
+  {
+    "case_id": "PR-009",
+    "type_main": "EX",
+    "subtypes": [
+      "CO"
+    ],
+    "role_focus": "V",
+    "stage_focus": 1,
+    "school_level": "MS",
+    "applies_to": [
+      "SV-EX-V-1-MS",
+      "SV-EX-V-2-MS"
+    ],
+    "keywords": [
+      "선배",
+      "돈",
+      "갈취",
+      "한 달",
+      "만 원",
+      "신고",
+      "50만원"
+    ],
+    "decision_date": "2024-10-08",
+    "court": "○○중학교 학교폭력 전담기구",
+    "case_number": "(가상) 학내 신고 2024-09-15",
+    "case_title_formal": "학교폭력 사실 확인 조사",
+    "disposition_summary": "(조사 진행 중, 학폭위 회부 예정)",
+    "friendly_title": "선배에게 한 달간 금품을 빼앗긴 사건",
+    "friendly_summary": "중학생이 선배에게 한 달간 매주 만 원씩 빼앗긴 사건이에요. 부모님과 함께 학교에 신고했고, 50만 원 미만이지만 지속적인 갈취였기 때문에 학교폭력으로 접수되어 사실 확인 조사가 진행됐어요.",
+    "recognition": "인정",
+    "category": "형사",
+    "sentence": "(처분 진행 중)",
+    "key_factors": [
+      "선후배 권력관계가 명확",
+      "지속적 반복으로 갈취 인정",
+      "위계관계가 있는 인간관계로 보기 어려운 위계"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "50만 원 이상이면 자체해결 불가",
+      "선후배 관계는 권력 비대칭 가중 요소",
+      "지속성이 처분 수위 결정에 핵심"
+    ]
+  },
+  {
+    "case_id": "PR-010",
+    "type_main": "OS",
+    "subtypes": [],
+    "role_focus": "V",
+    "stage_focus": 0,
+    "school_level": "ES",
+    "applies_to": [
+      "SV-OS-V-0-ES",
+      "SV-OS-V-1-ES"
+    ],
+    "keywords": [
+      "따돌림",
+      "초등",
+      "학급",
+      "무시",
+      "보호자",
+      "신고고민"
+    ],
+    "decision_date": null,
+    "court": "(해당 없음 · 미신고 단계)",
+    "case_number": "(미신고 단계)",
+    "case_title_formal": "(학교 신고 전)",
+    "disposition_summary": "(절차 미시작)",
+    "friendly_title": "초등학교 학급에서 따돌림을 당하는 사건",
+    "friendly_summary": "초등학교 5학년 학생이 학급 내에서 점차 따돌림을 당하고 있는 상황이에요. 친구들이 말을 걸지 않고 모둠활동에서 빼는 행동이 한 달째 계속되고 있어요. 보호자가 학교에 신고할지 고민 중인 단계예요.",
+    "recognition": "(미신고)",
+    "category": "—",
+    "sentence": "(미진행)",
+    "key_factors": [
+      "장기간 지속된 무시·소외 행위",
+      "초등학생의 정서적 위축이 우려됨",
+      "신고 결정 자체가 어려운 단계"
+    ],
+    "not_recognized_reasons": [],
+    "severity_factors": [
+      "신고 전에도 담임·학교상담사 면담 가능",
+      "117 학교폭력 신고센터 익명 상담 가능",
+      "보호자가 함께 학교에 면담 요청 추천"
+    ]
+  }
+]

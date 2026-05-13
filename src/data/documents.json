@@ -1,0 +1,128 @@
+[
+  {
+    "doc_id": "DOC-001",
+    "name": "사건 경위서",
+    "description": "언제, 어디서, 누구와, 어떤 일이 있었는지 시간 순서로 정리한 글",
+    "priority": "high",
+    "applies_to": [
+      "SV-*-G-2-*",
+      "SV-*-G-4-*",
+      "SV-*-G-5-*",
+      "SV-*-V-2-*",
+      "SV-*-V-4-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-002",
+    "name": "소명서",
+    "description": "본인의 입장을 정리하거나 잘못한 부분에 대해 설명하는 글",
+    "priority": "high",
+    "applies_to": [
+      "SV-*-G-4-*",
+      "SV-*-G-5-*",
+      "SV-*-G-6-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-003",
+    "name": "카톡·SNS 대화 내역 캡처",
+    "description": "관련된 대화가 있다면 시간이 보이도록 캡처. 사이버 사건의 핵심 증거",
+    "priority": "high",
+    "applies_to": [
+      "SV-CY-*-*-*",
+      "SV-VB-*-*-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-004",
+    "name": "평소 친밀도 입증 자료",
+    "description": "평소 사이가 좋았다는 점을 보여주는 메시지·사진",
+    "priority": "mid",
+    "applies_to": [
+      "SV-CY-G-*",
+      "SV-PH-G-*",
+      "SV-VB-G-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-005",
+    "name": "사과 시도 기록",
+    "description": "사건 후 사과를 시도한 내역 (메시지·편지·면담 기록 등)",
+    "priority": "mid",
+    "applies_to": [
+      "SV-*-G-4-*",
+      "SV-*-G-5-*",
+      "SV-*-G-6-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-006",
+    "name": "담임·상담교사 의견서",
+    "description": "평소 학교생활에 대한 선생님의 의견",
+    "priority": "mid",
+    "applies_to": [
+      "SV-*-G-4-*",
+      "SV-*-G-5-*",
+      "SV-*-V-4-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-007",
+    "name": "가족 진술서",
+    "description": "평소 성격이나 가정 내 분위기에 대한 보호자의 글",
+    "priority": "low",
+    "applies_to": [
+      "SV-*-G-4-*",
+      "SV-*-G-5-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-008",
+    "name": "CCTV·목격자 영상 자료",
+    "description": "사건 당시 상황을 보여주는 영상 또는 사진",
+    "priority": "high",
+    "applies_to": [
+      "SV-PH-*-*-*",
+      "SV-CO-*-*-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-009",
+    "name": "목격자 진술서",
+    "description": "같은 반 친구나 사건 현장에 있던 사람의 진술",
+    "priority": "mid",
+    "applies_to": [
+      "SV-PH-*-2-*",
+      "SV-OS-*-2-*",
+      "SV-CO-*-2-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-010",
+    "name": "치료·상담 기록",
+    "description": "병원 진료, 상담, 정신과 진단 기록",
+    "priority": "high",
+    "applies_to": [
+      "SV-*-V-*-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-011",
+    "name": "행정심판 청구서",
+    "description": "학폭위 처분에 불복할 때 작성하는 서류",
+    "priority": "high",
+    "applies_to": [
+      "SV-*-*-8-*"
+    ]
+  },
+  {
+    "doc_id": "DOC-012",
+    "name": "보호자 동의서·위임장",
+    "description": "보호자가 자녀의 절차에 함께 참여한다는 서류",
+    "priority": "mid",
+    "applies_to": [
+      "SV-*-*-4-*",
+      "SV-*-*-6-*"
+    ]
+  }
+]

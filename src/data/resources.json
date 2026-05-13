@@ -1,0 +1,134 @@
+[
+  {
+    "res_id": "R-001",
+    "name": "청소년 사이버 상담센터",
+    "phone": "1388",
+    "description": "24시간 무료 상담. 채팅·전화·게시판 가능",
+    "tags": [
+      "상담",
+      "익명"
+    ],
+    "applies_to": [
+      "SV-*-*-*-*"
+    ],
+    "priority_for_types": [
+      "CY",
+      "VB",
+      "OS"
+    ]
+  },
+  {
+    "res_id": "R-002",
+    "name": "학교폭력 신고센터",
+    "phone": "117",
+    "description": "경찰청 운영. 익명 신고 가능",
+    "tags": [
+      "신고",
+      "익명"
+    ],
+    "applies_to": [
+      "SV-*-V-0-*",
+      "SV-*-V-1-*"
+    ],
+    "priority_for_types": [
+      "PH",
+      "SX",
+      "CO",
+      "EX"
+    ]
+  },
+  {
+    "res_id": "R-003",
+    "name": "대한법률구조공단",
+    "phone": "132",
+    "description": "청소년 무료 법률상담 및 변호사 연계",
+    "tags": [
+      "법률",
+      "무료"
+    ],
+    "applies_to": [
+      "SV-*-G-4-*",
+      "SV-*-G-5-*",
+      "SV-*-G-8-*"
+    ],
+    "priority_for_types": []
+  },
+  {
+    "res_id": "R-004",
+    "name": "두루 (공익법센터)",
+    "phone": "duroo.org",
+    "description": "아동·청소년 인권 전문 변호사 단체",
+    "tags": [
+      "전문",
+      "인권"
+    ],
+    "applies_to": [
+      "SV-*-V-*",
+      "SV-*-G-*"
+    ],
+    "priority_for_types": []
+  },
+  {
+    "res_id": "R-005",
+    "name": "청소년인권운동연대 지음",
+    "phone": "youthhr.org",
+    "description": "어린이청소년인권상담소 운영",
+    "tags": [
+      "인권",
+      "상담"
+    ],
+    "applies_to": [
+      "SV-*-V-*"
+    ],
+    "priority_for_types": [
+      "OS",
+      "SX"
+    ]
+  },
+  {
+    "res_id": "R-006",
+    "name": "여성긴급전화",
+    "phone": "1366",
+    "description": "가정폭력·성폭력 24시간 상담·보호",
+    "tags": [
+      "긴급",
+      "보호"
+    ],
+    "applies_to": [
+      "SV-SX-V-*"
+    ],
+    "priority_for_types": [
+      "SX"
+    ],
+    "is_emergency": true
+  },
+  {
+    "res_id": "R-007",
+    "name": "아동권리보장원",
+    "phone": "1577-1391",
+    "description": "아동학대 신고 및 보호 조치",
+    "tags": [
+      "보호",
+      "신고"
+    ],
+    "applies_to": [
+      "SV-*-V-*-ES"
+    ],
+    "priority_for_types": []
+  },
+  {
+    "res_id": "R-008",
+    "name": "교육지원청 학폭 담당관",
+    "phone": "지역별 다름",
+    "description": "학폭위 심의 직접 담당. 절차 문의 가능",
+    "tags": [
+      "공식"
+    ],
+    "applies_to": [
+      "SV-*-*-4-*",
+      "SV-*-*-5-*",
+      "SV-*-*-7-*"
+    ],
+    "priority_for_types": []
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "stage": 0,
+    "label": "미인지·미신고",
+    "description": "사건만 발생, 학교에 알리지 않음"
+  },
+  {
+    "stage": 1,
+    "label": "학교 인지·신고 접수",
+    "description": "학교에 신고됨, 전담기구 인지"
+  },
+  {
+    "stage": 2,
+    "label": "사실 확인 조사 중",
+    "description": "전담기구 조사 진행 중"
+  },
+  {
+    "stage": 3,
+    "label": "학교장 자체해결 검토",
+    "description": "경미사안일 때"
+  },
+  {
+    "stage": 4,
+    "label": "학폭위 심의 통보",
+    "description": "심의위원회 출석 통보 받음"
+  },
+  {
+    "stage": 5,
+    "label": "학폭위 심의 직전",
+    "description": "심의 임박 (1주 이내)"
+  },
+  {
+    "stage": 6,
+    "label": "학폭위 심의 진행 중",
+    "description": "심의 당일 또는 직후"
+  },
+  {
+    "stage": 7,
+    "label": "처분 결정·통보",
+    "description": "처분 결과를 받음"
+  },
+  {
+    "stage": 8,
+    "label": "불복 절차 진행",
+    "description": "행정심판/행정소송"
+  },
+  {
+    "stage": 9,
+    "label": "형사·민사 병행",
+    "description": "별도 형사 또는 민사 절차"
+  }
+]
