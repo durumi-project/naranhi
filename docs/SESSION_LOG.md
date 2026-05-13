@@ -39,3 +39,49 @@
 
 ### 환경 메모
 - dev 서버 명령: cd ~/Desktop/Durumi && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use && npm run dev
+
+---
+
+## 2026-05-13 세션 2 — 데이터 외부화
+
+### 완료한 작업
+- [x] src/data/ 폴더에 JSON 8종 추출 (deep equality 검증 통과)
+- [x] App.jsx 외부화 적용 (1695줄 → 1316줄, 함수·컴포넌트 본문 무변경)
+- [x] 시나리오 A·B·C 동작 동일성 확인
+- [x] 두 커밋으로 분리하여 데이터 추출과 코드 변경을 의미적으로 구분
+
+### 외부화 결과
+- 데이터: src/data/cases.json (10건), documents.json (12), legal_terms.json (10), faqs.json (10), resources.json (8), question_trees.json (5키), procedure_stages.json (10), keyword_rules.json (5키)
+- 코드: src/App.jsx 1316줄 — import 8개 추가, const 8개 제거. 로직 함수와 UI 컴포넌트 완전 보존
+- 검증: deep equality (의미적 동일성 수학적 증명) + 5종 grep 검증 + 시나리오 A·B·C 수동 검증
+
+### 발견 이슈 — CASES 항목 수 불일치 + PR prefix 정체 미확인 (P3)
+
+**증상**: 지난 세션 SESSION_LOG.md에 "4건 가상 사례 (SAMPLE-001~004)"로 기록했으나 실제 src/App.jsx에는 10건 (SAMPLE-001~005 + PR-006~010).
+
+**추정**: PR prefix는 "precedent"(판례)일 가능성. 인수인계 시점에 이미 수동 수집된 판례 5건이 들어가 있었으나 우리가 인지 못 함.
+
+**다음 행동**: Step 2 직전에 별도 검토. 두루 변호사·인수인계 작성자에게 PR-006~010 출처 확인 필요.
+
+**우선순위**: P3 — 외부화·Step 2 진행에 직접 차단 요소 아님. 통합 스키마 적용 전까지 답 받으면 됨.
+
+### 운영 메모 — 세션 1에서 띄운 dev 서버가 세션 2까지 살아 있어 문제 발생
+
+**증상**: 외부화 후 브라우저에 세션 1 부트스트랩 placeholder가 보임. 1695줄 프로토타입 이전과 외부화가 모두 적용 안 된 듯한 화면.
+
+**원인**: 세션 1 종료 시 dev 서버 터미널을 Ctrl+C로 종료하지 않음. PID 1813이 :5173에서 24시간+ 계속 응답. HMR이 큰 변경(부트스트랩→프로토타입 통째 교체, 인라인→외부화)을 따라잡지 못한 것으로 추정. Vite 캐시(node_modules/.vite)도 옛 의존성 그래프로 굳음.
+
+**복구**: dev 서버 Ctrl+C 종료 → node_modules/.vite 삭제 → 재기동 → Cmd+Shift+R. 파일은 무손상.
+
+**예방 (모든 세션 종료 시)**: dev 서버 Ctrl+C로 명시 종료 + 세션 종료 단계에 SESSION_LOG.md에 자동 추가하는 체크리스트 항목 신설 제안. 다음 세션 시작 시 :5173 점유 프로세스 사전 확인.
+
+### 다음 세션 시작 시 할 일
+- :5173 점유 프로세스 사전 확인 (lsof -nP -iTCP:5173 -sTCP:LISTEN)
+- Step 2 진입 전: PR-006~010 출처 확인 (두루 변호사 또는 인수인계 작성자에게 문의 필요 여부 판단)
+- Step 2 본격 작업: 통합 스키마 v2 설계 → SAMPLE/PR 변환 → onmaeum2 사례 3건 병합 → cases/PENDING/, cases/REVIEWED/ 폴더 구조 도입
+
+### 세션 종료 체크리스트 (다음 세션 시작 전까지 살아 있어야 함)
+- [ ] dev 서버 터미널에서 Ctrl+C
+- [ ] Claude Code /exit 또는 창 닫기
+- [ ] git status가 깨끗한지 (모든 변경 커밋 완료)
+- [ ] SESSION_LOG.md 다음 세션 항목 채워졌는지
