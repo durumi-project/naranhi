@@ -1,5 +1,12 @@
 {
   "case_id": "SAMPLE-005",
+  "case_type": "sample",
+  "source_type": null,
+  "source_citation": null,
+  "decision_date": "2024-05-28",
+  "court": "경기도교육청 학교폭력대책심의위원회",
+  "case_number": "(가상) 학폭위 결정 2024-D-156",
+  "case_title_formal": "학교폭력 처분 결정",
   "type_main": "CO",
   "subtypes": [],
   "role_focus": "G",
@@ -18,25 +25,43 @@
     "3주",
     "다수"
   ],
-  "decision_date": "2024-05-28",
-  "court": "경기도교육청 학교폭력대책심의위원회",
-  "case_number": "(가상) 학폭위 결정 2024-D-156",
-  "case_title_formal": "학교폭력 처분 결정",
-  "disposition_summary": "학교에서의 봉사(3호) 결정",
+  "original_summary": null,
+  "original_facts": [],
+  "original_facts_raw": null,
+  "original_law": null,
+  "original_disposition": null,
+  "original_full_text": null,
+  "original_text_snippet": null,
   "friendly_title": "체육시간 빵 강요 사건",
   "friendly_summary": "중학생 세 명이 약 3주 동안 체육시간 직전마다 한 학생에게 매점에서 빵을 사오라고 반복적으로 요구한 사건이에요. 협박은 없었지만 여러 명이 함께 요구한 분위기 자체가 압박이 됐다는 점이 인정되어 학교폭력으로 판단됐고, 가담한 세 명 모두 학교 봉사(3호 처분)를 받았어요.",
-  "recognition": "일부인정",
-  "category": "형사",
-  "sentence": "3호 처분",
   "key_factors": [
     "다수가 함께 요구한 점이 위압으로 인정됨",
     "약 3주간 반복된 점",
     "경제적 손실이 동반된 점"
   ],
-  "not_recognized_reasons": [],
   "severity_factors": [
     "명시적 협박이 없어 처분 수위는 낮은 편",
     "가담자가 다수일 때 각자에게 처분 부과",
     "자진 사과 및 비용 변상 시 처분 경감 가능"
-  ]
+  ],
+  "related_laws_friendly": [],
+  "disposition_summary": "학교에서의 봉사(3호) 결정",
+  "recognition": "일부인정",
+  "category": "형사",
+  "sentence": "3호 처분",
+  "not_recognized_reasons": [
+    "명시적 협박이나 위계적 강제력이 인정되지 않음 — 분위기 압박만 학교폭력으로 인정"
+  ],
+  "safety_flag": false,
+  "safety_flag_reason": null,
+  "safety_banner": null,
+  "privacy_check": "Y",
+  "privacy_notes": null,
+  "review_status": "검수완료(가상사례·인수인계기준)",
+  "reviewer": null,
+  "reviewed_at": null,
+  "review_notes": null,
+  "stage_focus_note": null,
+  "school_level_note": null,
+  "role_focus_note": null
 }

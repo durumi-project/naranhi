@@ -1,5 +1,12 @@
 {
   "case_id": "PR-008",
+  "case_type": "sample",
+  "source_type": null,
+  "source_citation": null,
+  "decision_date": "2024-11-20",
+  "court": "서울특별시교육청 행정심판위원회",
+  "case_number": "(가상) 2024행심1234",
+  "case_title_formal": "학교폭력 처분 취소 청구",
   "type_main": "PH",
   "subtypes": [
     "VB"
@@ -19,25 +26,41 @@
     "전치",
     "치료"
   ],
-  "decision_date": "2024-11-20",
-  "court": "서울특별시교육청 행정심판위원회",
-  "case_number": "(가상) 2024행심1234",
-  "case_title_formal": "학교폭력 처분 취소 청구",
-  "disposition_summary": "청구 기각 (원처분 7호 학급교체 유지)",
+  "original_summary": null,
+  "original_facts": [],
+  "original_facts_raw": null,
+  "original_law": null,
+  "original_disposition": null,
+  "original_full_text": null,
+  "original_text_snippet": null,
   "friendly_title": "신체폭력 7호 처분 후 행정심판 사건",
   "friendly_summary": "중학생이 친구를 폭행해 전치 2주의 상해를 입혔고, 학폭위에서 학급교체(7호 처분)가 결정됐어요. 신고를 받은 학생 측은 처분이 과하다고 보고 행정심판을 청구했지만, 행정심판위원회는 원처분을 유지했어요.",
-  "recognition": "인정",
-  "category": "형사",
-  "sentence": "7호 처분 유지",
   "key_factors": [
     "전치 2주 이상이라 자체해결 불가능",
     "학폭위 처분의 재량 범위 내라고 인정됨",
     "행정심판 청구 자체는 정당한 권리 행사"
   ],
-  "not_recognized_reasons": [],
   "severity_factors": [
     "행정심판은 90일 이내 청구 가능",
     "집행정지 함께 신청해야 처분 미뤄짐",
     "원처분 유지율이 높은 편이므로 변호사 조력 권장"
-  ]
+  ],
+  "related_laws_friendly": [],
+  "disposition_summary": "청구 기각 (원처분 7호 학급교체 유지)",
+  "recognition": "인정",
+  "category": "형사",
+  "sentence": "7호 처분 유지",
+  "not_recognized_reasons": [],
+  "safety_flag": false,
+  "safety_flag_reason": null,
+  "safety_banner": null,
+  "privacy_check": "Y",
+  "privacy_notes": null,
+  "review_status": "검수완료(가상사례·인수인계기준)",
+  "reviewer": null,
+  "reviewed_at": null,
+  "review_notes": "PR prefix 의미는 두루미팀 확인 필요. 작성 톤·메타·case_number 형식이 SAMPLE-001~005와 동일하여 같은 등급으로 분류함.",
+  "stage_focus_note": null,
+  "school_level_note": null,
+  "role_focus_note": null
 }

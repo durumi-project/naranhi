@@ -1,5 +1,12 @@
 {
   "case_id": "PR-009",
+  "case_type": "sample",
+  "source_type": null,
+  "source_citation": null,
+  "decision_date": "2024-10-08",
+  "court": "○○중학교 학교폭력 전담기구",
+  "case_number": "(가상) 학내 신고 2024-09-15",
+  "case_title_formal": "학교폭력 사실 확인 조사",
   "type_main": "EX",
   "subtypes": [
     "CO"
@@ -20,25 +27,41 @@
     "신고",
     "50만원"
   ],
-  "decision_date": "2024-10-08",
-  "court": "○○중학교 학교폭력 전담기구",
-  "case_number": "(가상) 학내 신고 2024-09-15",
-  "case_title_formal": "학교폭력 사실 확인 조사",
-  "disposition_summary": "(조사 진행 중, 학폭위 회부 예정)",
+  "original_summary": null,
+  "original_facts": [],
+  "original_facts_raw": null,
+  "original_law": null,
+  "original_disposition": null,
+  "original_full_text": null,
+  "original_text_snippet": null,
   "friendly_title": "선배에게 한 달간 금품을 빼앗긴 사건",
   "friendly_summary": "중학생이 선배에게 한 달간 매주 만 원씩 빼앗긴 사건이에요. 부모님과 함께 학교에 신고했고, 50만 원 미만이지만 지속적인 갈취였기 때문에 학교폭력으로 접수되어 사실 확인 조사가 진행됐어요.",
-  "recognition": "인정",
-  "category": "형사",
-  "sentence": "(처분 진행 중)",
   "key_factors": [
     "선후배 권력관계가 명확",
     "지속적 반복으로 갈취 인정",
     "위계관계가 있는 인간관계로 보기 어려운 위계"
   ],
-  "not_recognized_reasons": [],
   "severity_factors": [
     "50만 원 이상이면 자체해결 불가",
     "선후배 관계는 권력 비대칭 가중 요소",
     "지속성이 처분 수위 결정에 핵심"
-  ]
+  ],
+  "related_laws_friendly": [],
+  "disposition_summary": "(조사 진행 중, 학폭위 회부 예정)",
+  "recognition": "인정",
+  "category": "형사",
+  "sentence": "(처분 진행 중)",
+  "not_recognized_reasons": [],
+  "safety_flag": false,
+  "safety_flag_reason": null,
+  "safety_banner": null,
+  "privacy_check": "Y",
+  "privacy_notes": null,
+  "review_status": "검수완료(가상사례·인수인계기준)",
+  "reviewer": null,
+  "reviewed_at": null,
+  "review_notes": "PR prefix 의미는 두루미팀 확인 필요. 작성 톤·메타·case_number 형식이 SAMPLE-001~005와 동일하여 같은 등급으로 분류함.",
+  "stage_focus_note": null,
+  "school_level_note": null,
+  "role_focus_note": null
 }

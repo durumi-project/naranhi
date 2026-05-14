@@ -1,5 +1,12 @@
 {
   "case_id": "SAMPLE-002",
+  "case_type": "sample",
+  "source_type": null,
+  "source_citation": null,
+  "decision_date": "2024-04-22",
+  "court": "○○교육지원청 학교폭력대책심의위원회",
+  "case_number": "(가상) 학폭위 결정 2024-B-045",
+  "case_title_formal": "학교폭력 사안 처리 결정",
   "type_main": "PH",
   "subtypes": [],
   "role_focus": "G",
@@ -18,30 +25,46 @@
     "CCTV",
     "경미"
   ],
-  "decision_date": "2024-04-22",
-  "court": "○○교육지원청 학교폭력대책심의위원회",
-  "case_number": "(가상) 학폭위 결정 2024-B-045",
-  "case_title_formal": "학교폭력 사안 처리 결정",
-  "disposition_summary": "학교폭력 불인정 (자체해결 종결)",
+  "original_summary": null,
+  "original_facts": [],
+  "original_facts_raw": null,
+  "original_law": null,
+  "original_disposition": null,
+  "original_full_text": null,
+  "original_text_snippet": null,
   "friendly_title": "복도에서 장난으로 어깨를 친 사건",
   "friendly_summary": "쉬는 시간 복도에서 친한 친구 사이에 어깨를 부딪치며 장난을 주고받았던 일이 학교폭력으로 신고된 사건이에요. 평소 친밀한 친구 사이였다는 점, CCTV에서 한쪽만 일방적으로 한 게 아니라 서로 주고받았다는 점, 다친 정도가 가벼웠다는 점이 함께 고려되어 학교폭력으로는 인정되지 않았어요.",
-  "recognition": "불인정",
-  "category": "형사",
-  "sentence": "자체해결",
   "key_factors": [
     "평소 친밀한 친구 사이로 일상적 신체 접촉이 있었다는 점",
     "CCTV와 목격자 진술로 일방적이 아닌 쌍방향적 장난임이 입증됨",
     "신체적 피해 정도가 경미함",
     "행위가 1회성이며 권력관계의 비대칭이 없었음"
   ],
+  "severity_factors": [
+    "CCTV 영상이 핵심 판단 근거",
+    "평소 친밀도 입증 자료가 결정적",
+    "목격자 진술의 일관성"
+  ],
+  "related_laws_friendly": [],
+  "disposition_summary": "학교폭력 불인정 (자체해결 종결)",
+  "recognition": "불인정",
+  "category": "형사",
+  "sentence": "자체해결",
   "not_recognized_reasons": [
     "쌍방향적 장난으로 일방적 가해로 보기 어려움",
     "지속성·반복성이 인정되지 않음",
     "권력관계의 비대칭이 없음"
   ],
-  "severity_factors": [
-    "CCTV 영상이 핵심 판단 근거",
-    "평소 친밀도 입증 자료가 결정적",
-    "목격자 진술의 일관성"
-  ]
+  "safety_flag": false,
+  "safety_flag_reason": null,
+  "safety_banner": null,
+  "privacy_check": "Y",
+  "privacy_notes": null,
+  "review_status": "검수완료(가상사례·인수인계기준)",
+  "reviewer": null,
+  "reviewed_at": null,
+  "review_notes": null,
+  "stage_focus_note": null,
+  "school_level_note": null,
+  "role_focus_note": null
 }
