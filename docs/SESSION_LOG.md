@@ -158,3 +158,113 @@
 - [ ] Claude Code /exit 또는 창 닫기
 - [ ] git status가 깨끗한지 (모든 변경 커밋 완료)
 - [ ] SESSION_LOG.md 다음 세션 항목 채워졌는지
+
+---
+
+## 2026-05-14 세션 4 — OM2 PENDING 분리 + index.js 연동 + GitHub 셋업 + 매뉴얼 5종 정리
+
+### 완료한 작업
+- [x] C-4 OM2 3건 PENDING 분리 (커밋 feb1330)
+- [x] C-5 cases/index.js + App.jsx 연동 (커밋 874b61e, 사용자 직접 커밋)
+- [x] GitHub 원격 저장소 셋업 (durumi-project/naranhi, Private)
+- [x] README.md 팀 온보딩 작성·푸시 (커밋 5d46d26)
+- [x] 팀원 4명 GitHub 초대 완료
+- [x] 두루 매뉴얼 5종 정리 (커밋 5983c46)
+- [x] Homebrew + poppler 설치 (시스템 환경)
+- [x] SESSION_LOG 세션 4 갱신
+
+### 사건 1 — C-4·C-5 자율 모드 중 좀비 프로세스 5개 발생
+
+**경과**:
+- C-4 OM2 3건 PENDING 분리는 정상 완료 (커밋 feb1330)
+- C-5 cases/index.js + App.jsx 연동 작업 중 Claude Code가 31분 무한 대기에 빠짐
+- 원인: Claude Code가 시나리오 검증을 위해 `npm run dev`를 자체적으로 띄움
+- 사용자가 `ps aux`로 진단 → claude 프로세스 3개 + dev 서버 자식 2개 = 좀비 5개 발견
+- PID 1045는 어제(세션 3) 좀비였음 (종료 안 됐던 것)
+- `kill -9`로 5개 모두 정리
+- C-5 작업 자체는 디스크에 적용된 상태 → 사용자가 브라우저로 검증 후 직접 커밋 (874b61e)
+
+**조치 — 세션 4에서 사용자가 명시한 운영 제약 (사고 학습 결과)**:
+- dev 서버는 Claude Code 안에서 *절대* 띄우지 않음. 검증 필요하면 사용자에게 "브라우저 확인 후 OK 신호" 요청만
+- 시나리오 검증 위한 `npm run dev` 시도 금지
+- 콘텐츠 판단이 끼는 자리(추출 항목 선정, 친화 변환 톤 결정 등)에서 *멈추고 보고* — 메모리 [[feedback-autonomous-content-judgment]]와 일관
+- 두루 자료를 *그대로 인용*하면 저작권 이슈 가능. *내용 추출 + 친화 변환 + 출처 명시* 원칙 따르기
+- 5분 이상 응답 없으면 사용자가 인터럽트 — 긴 작업은 단계 나눠서 보고
+
+### 사건 2 — GitHub 원격 저장소 셋업
+
+- durumi-project Organization 산하 naranhi 저장소 (Private) 생성
+- HTTPS + Personal Access Token으로 첫 push (137 objects, 1.48 MiB)
+- 사용자명 Aonosakujitsu
+
+**마찰**:
+- 초기 예시 URL(durumi-team)이 가짜라 `git remote add origin` 실패 → durumi-project로 수정
+- GitHub 일반 비밀번호 안 통함 → Personal Access Token 발급 필요
+- 토큰 입력 시 화면에 안 보이는 점 혼란
+
+### 사건 3 — README.md 팀 온보딩 작성 (커밋 5d46d26)
+
+수록 내용:
+- 환경 셋업 5단계 (clone → nvm → npm → dev → 시나리오 확인)
+- 핵심 원칙 4가지 (분류·친화·안전·검수)
+- 작업 흐름 (새 사례 / 검수 / UI 변경)
+- PR 워크플로우 + 커밋 메시지 규칙
+- 팀 역할 6가지 + 첫 작업 추천
+- 미해결 이슈 + 다음 마일스톤
+
+### 사건 4 — 팀원 4명 초대
+
+- GitHub Settings → Collaborators → Add people (Write 권한)
+- 처음 1명만 정상 수락, 3명은 "수락 페이지가 사라졌다"는 보고
+- 재초대로 해결
+
+### 사건 5 — 두루 매뉴얼 5종 정리 (커밋 5983c46)
+
+- 5개 PDF가 `6a03...` 임시 ID 이름이라 정체 파악 필요
+- Quick Look으로 1개씩 확인 (한 번에 5개 보려다 헷갈림 → 1개씩 천천히 효과적)
+- `docs/external/`로 알아볼 수 있는 이름으로 이동
+
+**파일 매핑**:
+- `두루_65가지_아동청소년_법률지식.pdf` (864K, 79쪽) — 인수인계에 없던 6번째 자료
+- `두루_소년보호사건_법률지원_매뉴얼.pdf` (1.2M)
+- `두루_아동청소년_법률지원_실무_매뉴얼.pdf` (2.1M)
+- `두루_보호소년_지원_매뉴얼.pdf` (2.2M)
+- `두루_수용자자녀_법률지원_매뉴얼.pdf` (8.4M) — 인수인계에 없던 자료
+
+### 사건 6 — Homebrew 설치 (시스템 환경)
+
+- 사용자가 brew 없어서 설치 진행
+- `/opt/homebrew/` 표준 위치
+- PATH 설정 (`.zprofile`에 `eval brew shellenv` 추가)
+
+### 사건 7 — poppler 설치 (시스템 환경)
+
+- `brew install poppler` 완료
+- `pdftoppm`, `pdftotext` 사용 가능
+- PDF 처리 인프라 준비됨
+
+### 사건 8 — Claude Code PDF 분석 시도 (보류)
+
+- 「65가지 법률 지식」 79쪽 분석 시작
+- 처음엔 poppler 없어서 멈춤 → 사용자 설치 → 재개
+- SESSION_LOG 갱신 작업으로 우회 (PDF 분석은 다음 세션으로 이월)
+
+### 다음 세션 시작 시 할 일
+
+- :5173 점유 프로세스 사전 확인 (`lsof -nP -iTCP:5173 -sTCP:LISTEN`)
+- 좀비 claude 프로세스 사전 확인 (`ps aux | grep -i claude | grep -v grep`)
+- PDF 분석 재시도: `docs/external/두루_65가지_아동청소년_법률지식.pdf` 1~5쪽
+  - Read 도구 PDF 페이지 읽기 시도
+  - 만약 Read 도구가 여전히 차단되면 대안으로 `pdftotext` CLI로 텍스트 추출 검토
+- 첫 5쪽 분석 결과 보고:
+  - 매뉴얼 구조 (목차·섹션 형식)
+  - 학교폭력 직접 관련 항목 수 추정
+  - 추출 가능한 데이터 유형 (legal_terms / faqs / cases / 기타)
+  - 친화 변환 부담 정도
+- 시범 추출 계획 보고(1~5건 규모, 카테고리, 작업 순서) → 사용자 합의 → 실제 추출
+
+### 세션 종료 체크리스트 (다음 세션 시작 전까지 살아 있어야 함)
+- [x] dev 서버 — 이번 세션엔 띄우지 않음 (확인 완료, :5173 비어 있음)
+- [ ] Claude Code /exit 또는 창 닫기
+- [ ] git status가 깨끗한지 (SESSION_LOG 커밋 후)
+- [ ] SESSION_LOG.md 다음 세션 항목 채워졌는지
