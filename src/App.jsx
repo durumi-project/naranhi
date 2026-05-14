@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 
 // 데이터 8종 - src/data/*.json (외부화 완료)
-import CASES from './data/cases.json';
+// cases는 폴더 자동 병합 — PENDING/ + REVIEWED/ (DEV 기본 둘 다, PROD 기본 REVIEWED만)
+import CASES from './data/cases/index.js';
 import DOCUMENTS from './data/documents.json';
 import LEGAL_TERMS from './data/legal_terms.json';
 import FAQS from './data/faqs.json';
