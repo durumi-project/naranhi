@@ -20,14 +20,14 @@ const reviewedCases = reviewedFiles.map((f) =>
   JSON.parse(readFileSync(resolve(reviewedDir, f), 'utf8'))
 );
 
-// OM2 사례 3건 로드 (PENDING/ 도입은 C-4 — 지금은 _staging/에서 직접)
-const om2File = JSON.parse(
-  readFileSync(
-    resolve(repoRoot, '_staging/onmaeum2_outputs/cases_from_onmaeum2.json'),
-    'utf8'
-  )
+// OM2 사례 3건 로드 — C-4에서 src/data/cases/PENDING/으로 분리됨
+const pendingDir = resolve(repoRoot, 'src/data/cases/PENDING');
+const pendingFiles = readdirSync(pendingDir)
+  .filter((f) => f.endsWith('.json'))
+  .sort();
+const pendingCases = pendingFiles.map((f) =>
+  JSON.parse(readFileSync(resolve(pendingDir, f), 'utf8'))
 );
-const om2 = om2File.cases;
 
 // 합성 케이스 — validateCase 로직 정확성 확인
 // 베이스로 첫 번째 REVIEWED 케이스를 사용 (이미 schema v2 conformant)
@@ -87,8 +87,8 @@ for (const c of reviewedCases) {
 }
 console.log();
 
-console.log('[1B] _staging/onmaeum2_outputs/cases_from_onmaeum2.json (3건):');
-for (const c of om2) {
+console.log('[1B] src/data/cases/PENDING/ (3건):');
+for (const c of pendingCases) {
   realTotal++;
   const { ok, errors } = validateCase(c);
   if (ok) {
