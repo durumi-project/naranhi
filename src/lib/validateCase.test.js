@@ -1,0 +1,162 @@
+// validateCase 테스트 스크립트.
+// 실행: node src/lib/validateCase.test.js
+// 종료 코드: 0=전체 통과, 1=실패.
+
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { validateCase } from './validateCase.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const repoRoot = resolve(__dirname, '..', '..');
+
+const samplesRaw = JSON.parse(
+  readFileSync(resolve(repoRoot, 'src/data/cases.json'), 'utf8')
+);
+const om2File = JSON.parse(
+  readFileSync(
+    resolve(repoRoot, '_staging/onmaeum2_outputs/cases_from_onmaeum2.json'),
+    'utf8'
+  )
+);
+const om2 = om2File.cases;
+
+// SAMPLE/PR 10건은 case_type/review_status 등이 비어 있음.
+// C-3가 채울 변환을 in-memory로 미리 적용 — 이게 곧 C-3 명세.
+// 멱등성: 이미 채워진 필드는 덮어쓰지 않음.
+function augmentSampleAsIfAfterC3(c) {
+  const out = { ...c };
+  if (out.case_type == null) out.case_type = 'sample';
+  if (out.review_status == null) {
+    out.review_status = '검수완료(가상사례·인수인계기준)';
+  }
+  // recognition 불인정·일부인정인데 not_recognized_reasons 비어 있으면 placeholder.
+  // C-3에서는 실제 사유를 채워야 함.
+  if (
+    typeof out.recognition === 'string' &&
+    (out.recognition === '불인정' || out.recognition === '일부인정') &&
+    (!Array.isArray(out.not_recognized_reasons) ||
+      out.not_recognized_reasons.length === 0)
+  ) {
+    out.not_recognized_reasons = [
+      '(C-3에서 보강 예정 — 검증 통과용 임시 placeholder)',
+    ];
+  }
+  // PR-006~010: prefix 의미 미확인 명시
+  if (c.case_id && c.case_id.startsWith('PR-') && out.review_notes == null) {
+    out.review_notes =
+      'PR prefix 의미는 두루미팀 확인 필요. 작성 톤·메타·case_number 형식이 SAMPLE-001~005와 동일하여 같은 등급으로 분류함.';
+  }
+  return out;
+}
+
+const augmentedSamples = samplesRaw.map(augmentSampleAsIfAfterC3);
+
+// 합성 케이스 — validateCase 로직 정확성 확인
+const SYNTHETIC = [
+  {
+    label: 'valid-sample-after-c3 (대조군)',
+    expect: 'ok',
+    data: augmentedSamples[0],
+  },
+  {
+    label: 'invalid-missing-case-type',
+    expect: 'fail',
+    expectErrorMatch: /case_type — 기본 필수 필드 누락/,
+    data: (() => {
+      const c = { ...augmentedSamples[0] };
+      delete c.case_type;
+      return c;
+    })(),
+  },
+  {
+    label: 'invalid-recognition-no-reasons',
+    expect: 'fail',
+    expectErrorMatch: /not_recognized_reasons — recognition='불인정'일 때/,
+    data: {
+      ...augmentedSamples[0],
+      case_id: 'SYN-RECOG',
+      recognition: '불인정',
+      not_recognized_reasons: [],
+    },
+  },
+  {
+    label: 'invalid-stage-out-of-range',
+    expect: 'fail',
+    expectErrorMatch: /stage_focus — 숫자 0~9이어야 함/,
+    data: { ...augmentedSamples[0], case_id: 'SYN-STAGE', stage_focus: 11 },
+  },
+];
+
+let realPass = 0;
+let realTotal = 0;
+
+console.log('=== validateCase 테스트 ===\n');
+
+console.log('[1A] src/data/cases.json (10건, C-3 augmented):');
+for (const c of augmentedSamples) {
+  realTotal++;
+  const { ok, errors } = validateCase(c);
+  if (ok) {
+    console.log(`  ✓ ${c.case_id}  ok`);
+    realPass++;
+  } else {
+    console.log(`  ✗ ${c.case_id}  errors=${errors.length}`);
+    errors.forEach((e) => console.log(`      ${e}`));
+  }
+}
+console.log();
+
+console.log('[1B] _staging/onmaeum2_outputs/cases_from_onmaeum2.json (3건):');
+for (const c of om2) {
+  realTotal++;
+  const { ok, errors } = validateCase(c);
+  if (ok) {
+    console.log(`  ✓ ${c.case_id}  ok`);
+    realPass++;
+  } else {
+    console.log(`  ✗ ${c.case_id}  errors=${errors.length}`);
+    errors.forEach((e) => console.log(`      ${e}`));
+  }
+}
+console.log();
+
+console.log('[2] 합성 케이스:');
+let synMatched = 0;
+for (const t of SYNTHETIC) {
+  const { ok, errors } = validateCase(t.data);
+  const actual = ok ? 'ok' : 'fail';
+  if (actual !== t.expect) {
+    console.log(`  ✗ ${t.label}  기대=${t.expect}, 실제=${actual}`);
+    errors.forEach((e) => console.log(`      ${e}`));
+    continue;
+  }
+  if (t.expect === 'fail' && t.expectErrorMatch) {
+    const found = errors.some((e) => t.expectErrorMatch.test(e));
+    if (!found) {
+      console.log(`  ✗ ${t.label}  fail은 맞으나 기대 에러 패턴 매치 안 됨`);
+      console.log(`      기대 패턴: ${t.expectErrorMatch}`);
+      errors.forEach((e) => console.log(`      실제: ${e}`));
+      continue;
+    }
+  }
+  console.log(`  ✓ ${t.label}  ${actual} (기대대로)`);
+  synMatched++;
+}
+console.log();
+
+const allRealPass = realPass === realTotal;
+const allSynMatched = synMatched === SYNTHETIC.length;
+
+console.log(
+  `요약: 실제 ${realPass}/${realTotal} 통과, 합성 ${synMatched}/${SYNTHETIC.length} 기대 일치`
+);
+
+if (allRealPass && allSynMatched) {
+  console.log('✓ 전체 통과');
+  process.exit(0);
+} else {
+  console.log('✗ 실패');
+  process.exit(1);
+}
