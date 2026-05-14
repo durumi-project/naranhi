@@ -170,26 +170,32 @@ naranhi/
 
 ---
 
-## 4. 통합 cases.json 스키마 v2 (33필드)
+## 4. 통합 cases.json 스키마 v2 (42필드)
 
 ```jsonc
 {
+  // ── A. 식별자 ──────────────────────────────────────
   "case_id": "string",                     // 고유 ID (예: OM2-IV-001, SAMPLE-001)
-  "case_type": "string",                   // "precedent" | "alternative_resolution" | "sample"
+  "case_type": "precedent|alternative_resolution|sample",
+
+  // ── B. 출처·검증 (precedent/alternative_resolution에서 중요) ──
   "source_type": "string",                 // "대법원판결" | "케이스노트" | "두루자료" | "교육청공시"
   "source_citation": "string",             // 출처 인용 (역추적 가능)
   "decision_date": "string|null",          // "2024-05-15" 또는 null
   "court": "string|null",                  // 법원/심의기구
   "case_number": "string|null",            // 사건번호
   "case_title_formal": "string",           // 정식 사건명
-  "disposition_summary": "string",         // 처분 요약
+
+  // ── C. 분류 코드 (8×6×10×4 체계) ────────────────────
   "type_main": "PH|VB|EX|CO|OS|SX|CY|MX",
   "subtypes": ["string"],                  // 부속 유형 배열
   "role_focus": "G|V|B|W|P|U",
-  "stage_focus": "0-9",
+  "stage_focus": 0,                        // 숫자 0~9 (정렬·비교 용이)
   "school_level": "ES|MS|HS|OT",
   "applies_to": ["string"],                // 매칭 가능 코드 배열 (와일드카드 * 허용)
   "keywords": ["string"],                  // 자동/수동 추출 키워드
+
+  // ── D. 원문 (precedent/alternative_resolution에서 채움) ──
   "original_summary": "string",            // 원문 요약 (200~400자)
   "original_facts": ["string"],            // 사실관계 불릿 (5~8개)
   "original_facts_raw": "string",          // 원문 그대로 (가공 전)
@@ -197,6 +203,8 @@ naranhi/
   "original_disposition": "string",        // 원문 처분
   "original_full_text": "string",          // 원문 전문 (또는 발췌)
   "original_text_snippet": "string",       // 출처 검증용 짧은 발췌
+
+  // ── E. 친화 변환 (모든 사례 채움) ──────────────────
   "friendly_title": "string",              // 친화 제목
   "friendly_summary": "string",            // 친화 요약 (학생 눈높이)
   "key_factors": ["string"],               // 핵심 요소 불릿
@@ -204,22 +212,57 @@ naranhi/
   "related_laws_friendly": [               // 법조항 풀이
     {"law": "string", "friendly": "string"}
   ],
+
+  // ── F. 카드 표시 (sample 카드 본질, precedent에도 사용) ──
+  "disposition_summary": "string",         // 처분 요약 (한 줄)
+  "recognition": "인정|불인정|일부인정|(미신고)|(진행중)",
+  "category": "형사|민사|형사·민사|—",
+  "sentence": "string",                    // 처분호수 간략 표기 (예: "5호 처분")
+  "not_recognized_reasons": ["string"],    // recognition="불인정"|"일부인정"일 때만 채움
+
+  // ── G. 안전 ─────────────────────────────────────────
   "safety_flag": "boolean",                // 자해·자살·가정폭력 등 위기 신호
-  "safety_banner": {                       // safety_flag=true일 때 노출 정책
+  "safety_flag_reason": "string",          // safety_flag=true일 때 트리거 근거 (선택)
+  "safety_banner": {                       // safety_flag=true일 때 필수
     "show": "boolean",
     "title": "string",
     "body": "string",
-    "resources": [{"name": "string", "number": "string", "available": "string"}]
+    "resources": [{"name": "string", "number": "string", "available": "string"}],
+    "placement": "string"                  // 노출 위치 정책 (선택)
   },
+
+  // ── H. 검수 ─────────────────────────────────────────
   "privacy_check": "Y|N",
+  "privacy_notes": "string",               // 가명·비식별화 처리 메모 (선택)
   "review_status": "검수대기|검수완료|반려",
   "reviewer": "string|null",
   "reviewed_at": "string|null",
-  "review_notes": "string|null"
+  "review_notes": "string|null",
+
+  // ── I. 보충 메모 (모두 선택, 코드 매칭의 예외·맥락 설명용) ──
+  "stage_focus_note": "string",            // 발생 시점 vs 현재 시점 다를 때 등
+  "school_level_note": "string",
+  "role_focus_note": "string"
 }
 ```
 
-> 주의: 프로토타입 v2.1의 인라인 CASES 배열은 *4~6필드*만 채워져 있음. 외부화 시 *나머지 필드는 null 또는 빈 배열*로 채우고, 검수 통해 점진 보강.
+### 필수 vs 선택 — validateCase 통과 기준
+
+**기본 필수 (10필드)** — 모든 사례:
+`case_id`, `case_type`, `type_main`, `role_focus`, `stage_focus`, `school_level`, `applies_to`, `friendly_title`, `friendly_summary`, `review_status`
+
+**case_type별 추가 필수**:
+- `case_type="precedent"` → `source_type`, `source_citation`, `original_law`, `disposition_summary`
+- `case_type="alternative_resolution"` → `source_citation`, `original_summary`
+- `case_type="sample"` → `disposition_summary`, `recognition`, `key_factors`
+
+**조건부 필수**:
+- `safety_flag=true` → `safety_banner` (show/title/body/resources 모두)
+- `recognition="불인정"` 또는 `"일부인정"` → `not_recognized_reasons` 1개 이상
+
+**선택** — 위 외 모든 필드. null·빈 배열·빈 문자열 허용.
+
+> 주의: 프로토타입 v2.1의 인라인 CASES 배열은 위 필수 규칙 기준으로 *기본 필수 + sample 추가 필수*만 채워져 있음. D그룹(원문)은 비어 있고, F그룹(카드 표시)은 충실히 채워져 있는 형태. 외부화 시 *선택 필드는 null/빈 배열*로 채우고, 검수 통해 점진 보강.
 
 ---
 
@@ -308,6 +351,7 @@ naranhi/
 - **변경 후 git diff 결과 요약** — 무엇이 바뀌었는지 사람이 빠르게 파악 가능하게
 - **에러 발생 시 *원인부터*** — 해결책 제안 전에 *왜 그렇게 됐는지* 1~2줄 설명
 - **불확실하면 묻기** — 추측보다 짧은 확인 질문이 안전
+- **커밋 메시지에 자동 서명 금지** — `Co-Authored-By` 같은 줄을 추가하지 말 것. 두루미팀 학생이 작성자, Claude는 도구. 두루 변호사·교수·멘토가 히스토리를 볼 때 협업 모델이 명확해야 함.
 
 ---
 
