@@ -1,0 +1,43 @@
+{
+  "case_id": "SAMPLE-003",
+  "type_main": "OS",
+  "subtypes": [],
+  "role_focus": "G",
+  "stage_focus": 7,
+  "school_level": "ES",
+  "applies_to": [
+    "SV-OS-G-4-ES",
+    "SV-OS-G-7-ES"
+  ],
+  "keywords": [
+    "체육복",
+    "숨김",
+    "여러 명",
+    "5일",
+    "집단",
+    "초등",
+    "수업"
+  ],
+  "decision_date": "2024-06-10",
+  "court": "경기도교육청 학교폭력대책심의위원회",
+  "case_number": "(가상) 학폭위 결정 2024-C-078",
+  "case_title_formal": "학교폭력 처분 결정",
+  "disposition_summary": "사회봉사(4호) 및 학교봉사(3호) 결정",
+  "friendly_title": "체육복을 숨긴 사건",
+  "friendly_summary": "초등학교 6학년 학급에서 네 명의 학생이 한 학생의 체육복을 약 5일간 돌려가며 숨긴 사건이에요. 그 친구는 체육 수업에 참여하지 못하고 정서적으로 위축되어 상담까지 받게 됐어요. 학교폭력으로 인정되어 주도한 학생은 사회봉사(4호 처분), 함께한 세 명은 학교 봉사(3호 처분)를 받았어요.",
+  "recognition": "인정",
+  "category": "형사",
+  "sentence": "3~4호 처분",
+  "key_factors": [
+    "재물 임의 점유로 인한 실질적·정서적 피해",
+    "여러 명이 가담한 집단성",
+    "피해 학생의 수업 참여에 직접적 지장 발생",
+    "자진 반환이 없었던 점"
+  ],
+  "not_recognized_reasons": [],
+  "severity_factors": [
+    "가담 정도에 따라 처분 차등",
+    "사과 시점이 처분에 영향",
+    "의무교육 대상이라 9호 처분 불가"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "case_id": "SAMPLE-004",
+  "type_main": "CY",
+  "subtypes": [],
+  "role_focus": "V",
+  "stage_focus": 9,
+  "school_level": "HS",
+  "applies_to": [
+    "SV-CY-V-1-HS",
+    "SV-CY-V-7-HS",
+    "SV-CY-V-9-HS"
+  ],
+  "keywords": [
+    "SNS",
+    "비공개",
+    "캡처",
+    "유포",
+    "단톡방",
+    "정보통신망법",
+    "휴학",
+    "정신과"
+  ],
+  "decision_date": "2024-08-30",
+  "court": "인천지방법원",
+  "case_number": "(가상) 2024고단5678",
+  "case_title_formal": "정보통신망이용촉진및정보보호등에관한법률위반(명예훼손)",
+  "disposition_summary": "징역 6월, 집행유예 2년 (학폭위 6호 처분 별도)",
+  "friendly_title": "SNS 비공개 사진을 단톡방에 유포한 사건",
+  "friendly_summary": "고등학생이 다른 학생의 비공개 SNS 게시물을 동의 없이 캡처해 학년 단체방 세 곳에 유포한 사건이에요. 피해 학생은 정신과 진단을 받고 휴학까지 이르렀어요. 학교폭력으로 인정되어 출석정지(6호 처분)가 결정됐고, 정보통신망법 위반으로 형사 절차도 함께 진행됐어요.",
+  "recognition": "인정",
+  "category": "형사·민사",
+  "sentence": "6호 + 형사",
+  "key_factors": [
+    "비공개 게시물의 무단 캡처·유포",
+    "디지털 흔적의 광범위한 확산성",
+    "피해자의 명시적 거부 의사 무시",
+    "학폭과 형사 절차의 병행"
+  ],
+  "not_recognized_reasons": [],
+  "severity_factors": [
+    "확산 범위가 처분 수위에 결정적",
+    "게시물의 사적 성격이 강할수록 가중",
+    "형사 절차 병행으로 변호사 조력 필요"
+  ]
+}

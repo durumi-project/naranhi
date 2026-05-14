@@ -1,0 +1,41 @@
+{
+  "case_id": "PR-007",
+  "type_main": "CY",
+  "subtypes": [],
+  "role_focus": "B",
+  "stage_focus": 2,
+  "school_level": "HS",
+  "applies_to": [
+    "SV-CY-B-2-HS",
+    "SV-CY-B-7-HS"
+  ],
+  "keywords": [
+    "게임",
+    "보이스챗",
+    "쌍방",
+    "욕설",
+    "양측",
+    "고등학생"
+  ],
+  "decision_date": "2024-07-05",
+  "court": "○○교육지원청 학교폭력대책심의위원회",
+  "case_number": "(가상) 학폭위 결정 2024-F-189",
+  "case_title_formal": "학교폭력 처분 결정",
+  "disposition_summary": "쌍방 서면사과(1호) 결정",
+  "friendly_title": "온라인 게임 보이스챗 욕설 쌍방 사건",
+  "friendly_summary": "같은 학교 친구 두 명이 온라인 게임 보이스챗에서 서로 욕설을 주고받은 사건이에요. 양쪽 다 신고했고, 두 명 모두 학교폭력으로 인정되어 쌍방 1호 처분(서면사과)을 받았어요.",
+  "recognition": "인정",
+  "category": "형사",
+  "sentence": "쌍방 1호 처분",
+  "key_factors": [
+    "쌍방 가해·피해 관계가 동시에 인정됨",
+    "학교 외부 시간이지만 학생 간 관계가 학교생활에 영향",
+    "욕설 수위와 빈도가 양측 비슷함"
+  ],
+  "not_recognized_reasons": [],
+  "severity_factors": [
+    "쌍방 사건은 양측 책임을 함께 검토",
+    "먼저 시작한 사람에 대한 처분 가중 가능",
+    "자율적 화해 시 처분 경감"
+  ]
+}

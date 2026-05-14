@@ -1,0 +1,42 @@
+{
+  "case_id": "PR-006",
+  "type_main": "CY",
+  "subtypes": [
+    "VB"
+  ],
+  "role_focus": "G",
+  "stage_focus": 4,
+  "school_level": "HS",
+  "applies_to": [
+    "SV-CY-G-4-HS",
+    "SV-CY-G-7-HS"
+  ],
+  "keywords": [
+    "인스타",
+    "DM",
+    "욕설",
+    "고등학생",
+    "여러 번",
+    "차단"
+  ],
+  "decision_date": "2024-09-12",
+  "court": "○○교육지원청 학교폭력대책심의위원회",
+  "case_number": "(가상) 학폭위 결정 2024-E-234",
+  "case_title_formal": "학교폭력 처분 결정",
+  "disposition_summary": "출석정지(6호 처분) 결정",
+  "friendly_title": "인스타 DM으로 욕설을 보낸 사건",
+  "friendly_summary": "고등학생이 같은 학교 학생에게 인스타그램 다이렉트 메시지로 욕설을 약 2주간 보낸 사건이에요. 받는 학생이 차단했음에도 다른 계정으로 우회해 계속 보냈어요. 학교폭력으로 인정되어 출석정지(6호 처분)를 받았어요.",
+  "recognition": "인정",
+  "category": "형사",
+  "sentence": "6호 처분",
+  "key_factors": [
+    "차단 회피 행위가 거부 의사 무시로 평가됨",
+    "디지털 증거가 명확하게 보존됨",
+    "고등학생이라 9호 처분도 가능했으나 6호로 결정"
+  ],
+  "not_recognized_reasons": [],
+  "severity_factors": [
+    "차단 우회는 가중 사유",
+    "고등학교는 의무교육 아니라 처분 범위 넓음"
+  ]
+}

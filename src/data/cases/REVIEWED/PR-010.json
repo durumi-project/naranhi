@@ -1,0 +1,41 @@
+{
+  "case_id": "PR-010",
+  "type_main": "OS",
+  "subtypes": [],
+  "role_focus": "V",
+  "stage_focus": 0,
+  "school_level": "ES",
+  "applies_to": [
+    "SV-OS-V-0-ES",
+    "SV-OS-V-1-ES"
+  ],
+  "keywords": [
+    "따돌림",
+    "초등",
+    "학급",
+    "무시",
+    "보호자",
+    "신고고민"
+  ],
+  "decision_date": null,
+  "court": "(해당 없음 · 미신고 단계)",
+  "case_number": "(미신고 단계)",
+  "case_title_formal": "(학교 신고 전)",
+  "disposition_summary": "(절차 미시작)",
+  "friendly_title": "초등학교 학급에서 따돌림을 당하는 사건",
+  "friendly_summary": "초등학교 5학년 학생이 학급 내에서 점차 따돌림을 당하고 있는 상황이에요. 친구들이 말을 걸지 않고 모둠활동에서 빼는 행동이 한 달째 계속되고 있어요. 보호자가 학교에 신고할지 고민 중인 단계예요.",
+  "recognition": "(미신고)",
+  "category": "—",
+  "sentence": "(미진행)",
+  "key_factors": [
+    "장기간 지속된 무시·소외 행위",
+    "초등학생의 정서적 위축이 우려됨",
+    "신고 결정 자체가 어려운 단계"
+  ],
+  "not_recognized_reasons": [],
+  "severity_factors": [
+    "신고 전에도 담임·학교상담사 면담 가능",
+    "117 학교폭력 신고센터 익명 상담 가능",
+    "보호자가 함께 학교에 면담 요청 추천"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "case_id": "SAMPLE-001",
+  "type_main": "CY",
+  "subtypes": [
+    "VB"
+  ],
+  "role_focus": "G",
+  "stage_focus": 7,
+  "school_level": "MS",
+  "applies_to": [
+    "SV-CY-G-4-MS",
+    "SV-CY-G-5-MS",
+    "SV-CY-G-7-MS"
+  ],
+  "keywords": [
+    "단톡방",
+    "별명",
+    "외모",
+    "카톡",
+    "한 달",
+    "거부",
+    "그만",
+    "학폭위",
+    "5호"
+  ],
+  "decision_date": "2024-05-15",
+  "court": "○○교육지원청 학교폭력대책심의위원회",
+  "case_number": "(가상) 학폭위 결정 2024-A-123",
+  "case_title_formal": "학교폭력 처분 결정",
+  "disposition_summary": "특별교육이수(5호 처분) 결정",
+  "friendly_title": "단톡방에서 별명으로 놀린 사건",
+  "friendly_summary": "교실 단체 카톡방에서 한 학생을 외모 관련 별명으로 약 6주간 반복적으로 부른 사건이에요. 그 친구가 명확히 그만해달라고 말한 이후에도 행위가 계속됐고, 결국 학교를 못 가는 상황까지 이르렀어요. 학교폭력으로 인정되어 신고 대상이 된 학생은 특별교육이수(5호 처분)를 받았어요.",
+  "recognition": "인정",
+  "category": "형사",
+  "sentence": "5호 처분",
+  "key_factors": [
+    "피해 학생의 명확한 거부 의사 표명 이후에도 행위가 지속됨",
+    "단체 채팅방이라는 공개적 성격으로 인한 모욕감 가중",
+    "피해 학생의 등교 거부·정신과 상담 등 정신적 피해 입증"
+  ],
+  "not_recognized_reasons": [],
+  "severity_factors": [
+    "지속성: 약 6주간 반복",
+    "공개성: 학급 단체방 다수 노출",
+    "사과 여부: 처분 전 진심 어린 사과로 처분 경감"
+  ]
+}
