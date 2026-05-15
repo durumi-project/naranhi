@@ -87,7 +87,7 @@ for (const c of reviewedCases) {
 }
 console.log();
 
-console.log('[1B] src/data/cases/PENDING/ (5건):');
+console.log('[1B] src/data/cases/PENDING/ (15건):');
 for (const c of pendingCases) {
   realTotal++;
   const { ok, errors } = validateCase(c);
