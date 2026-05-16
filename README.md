@@ -25,27 +25,28 @@
 
 ## 지금 어디까지 왔나요 — 솔직히
 
-**최종 업데이트: 2026-05-16 (세션 7 완료 — 두루 자료 46건 일괄 변환, 누적 71건, M1 초과 달성)**
+**최종 업데이트: 2026-05-16 (세션 9 완료 — M2 LLM 통합 *시작*, Hello Claude + 설계 초안)**
 
 ```
 ✅ 작동하는 데모          localhost:5173에서 6단계 사용자 여정 + 안전 분기 정상
 ✅ GitHub 저장소           durumi-project/naranhi (비공개), 팀원 4명 합류 중
-✅ 자료 71건                가상 10건 (검수완료) + OM2 3건 + 두루 추출 58건 (검수대기) — 갱신
-✅ 진짜 판례 8건            DR-PREC-001~008 (009 강제추행 SKIP, 010 학폭 무관 제외) — 갱신
-✅ 첫 모든 역할             V·G·B(쌍방, 046) + P(보호자, PREC-003) + 단계 0~9 전부 — 신규
-✅ 첫 모든 학교급           ES/MS/HS (OT는 미보유) — 갱신
+✅ 자료 71건                가상 10건 (검수완료) + OM2 3건 + 두루 추출 58건 (검수대기)
+✅ 진짜 판례 8건            DR-PREC-001~008 (009 강제추행 SKIP, 010 학폭 무관 제외)
+✅ 첫 모든 역할             V·G·B(쌍방, 046) + P(보호자, PREC-003) + 단계 0~9 전부
+✅ 첫 모든 학교급           ES/MS/HS (OT는 미보유)
 ✅ 검수 트랙               src/data/cases/PENDING ↔ REVIEWED 폴더 구조
 ✅ 자동 검증               스키마 v2 (42필드) + validateCase 함수 (71/71 통과)
 ✅ 두루 매뉴얼 5종         활용 가능 확인됨 (docs/external/)
 ✅ 두루 직접 제공 자료     50건 사례 (50/50) + 판례 10건 (8/10) — 두루 측 변환 완료
 ✅ PDF 처리 인프라         poppler 설치, PDF 추출 준비 완료
-🟡 두루 변호사 검수        PENDING 61건 검수 패키지 미작성 — 다음 가장 큰 과제
-❌ LLM 통합                미시작 (자료 충분히 모임, 다음 단계 후보)
+✅ 두루 검수 패키지 v1     docs/검수_패키지_v1.md (PENDING 61건 + 9개 자문 카테고리) — 신규
+🟡 두루 변호사 검수        검수 패키지 송부·의견 수렴 단계 (병행 진행)
+🟢 LLM 통합 (M2)            *시작* — Anthropic SDK 통합, Hello Claude 호출 성공, 설계 초안 — 신규
 ❌ 배포                    미시작 (localhost만)
 ❌ 학교 현장 노출          미시작
 ```
 
-**한 줄로**: *동작하는 데모 + 자료 71건 (M1 30~50건 초과 달성). 두루 변호사 검수 패키지 작성이 *진짜* 다음 과제 — 그 다음 LLM 통합 진입 후보.*
+**한 줄로**: *동작하는 데모 + 자료 71건 (M1 초과 달성) + M2 LLM 통합 시작 — Hello Claude 호출 + 설계 초안 + Haiku 4.5 비용 검증 완료. 다음 세션 = 백엔드 옵션 결정 + 첫 API Route.*
 
 ## 사전 준비
 
@@ -471,7 +472,35 @@ which pdftoppm   # /opt/homebrew/bin/pdftoppm 나와야 함
 [M6] 두루 공식 협력 + 학교 노출        →  프로젝트 본 목적 도달
 ```
 
-**현재 위치**: M1 진입 시작점 (두루 자료에서 진짜 사례 추출 단계).
+**현재 위치**: **M2 진입 시작점** (LLM 통합 — Anthropic SDK Hello Claude 호출 성공, 설계 초안 작성 단계).
+
+### M2 진행 상황 (세션 9 기준)
+
+- ✅ `@anthropic-ai/sdk` + `dotenv` 설치
+- ✅ `.env.example` 템플릿 (학생 팀이 복사·편집)
+- ✅ `src/lib/llm/helloClaudeCheck.js` — Haiku 4.5 호출 + 토큰·비용·소요시간 표시
+- ✅ `npm run llm:check` 스크립트
+- ✅ `docs/llm_integration_design.md` v0.1 — 아키텍처 3옵션·API 패턴·안전 분기·비용·보안·일정
+- 🟡 백엔드 옵션 결정 (잠정 권고: Vercel Edge — 두루미팀 회의 후 확정)
+- ❌ `api/classify.js` (또는 Workers handler) 작성 — 세션 10
+- ❌ Rate limit + 입력 sanitization — 세션 12
+
+### LLM 동작 확인 (학생 팀용)
+
+```bash
+# 1. 환경 셋업
+cp .env.example .env.local
+# .env.local 에 Anthropic 콘솔에서 발급한 키 붙여넣기
+
+# 2. 설치 (이미 npm install 했다면 생략)
+npm install
+
+# 3. 호출 확인
+npm run llm:check
+# → "📩 응답: ..." + 토큰 + 비용 표시되면 성공
+```
+
+> 호출당 ~1,750 tok, 비용 ~$0.003 (~4원). 월 \$50 한도면 1만 호출 가능.
 
 ## 마지막으로
 
