@@ -1058,3 +1058,53 @@ const action = reason.includes('자해') || reason.includes('자살') ? 'urgent_
 - [x] dev plugin이 dotenv로 .env.local만 로드 — 다른 .env.* 파일 *접근 안 함*
 - [x] 클라이언트 fallback 메시지에 *내부 stage 코드만 노출* — API 키·내부 경로 *없음*
 - [x] 모든 데이터 변경 없음 (사례 71건, 검수 트랙 동일)
+
+---
+
+## 2026-05-16 세션 12 — Vercel 첫 배포 디버그 (vercel.json functions 문법)
+
+### 증상
+
+세션 11 커밋(`1afb3b5`)을 origin/main에 푸시 후 Vercel 첫 배포 시도. 빌드는 시작되었으나 배포 실패:
+
+> `Function Runtimes must have a valid version, for example "now-php@1.0.0".`
+
+### 원인
+
+`vercel.json`의 `functions` 블록에서 runtime 값을 *문자열 `"edge"`*로 지정했음. Vercel은 `functions[...].runtime` 필드에 *버전 명시 패키지 문자열*(`@vercel/edge@x.y.z` 같은 형식)을 요구. `"edge"`는 *문법 위반*.
+
+근본 원인은 *문서 혼동*: Vercel Edge Runtime의 *현재 권장 패턴*은 `vercel.json`의 `functions` 블록에 지정하는 게 아니라 *함수 파일 자체*에 `export const config = { runtime: 'edge' };`로 선언하는 것. 세션 10 셋업 시 두 곳 모두에 적어둔 게 충돌.
+
+세션 11 시점에 `api/classify.js`에는 이미 `export const config = { runtime: 'edge' };`가 적혀 있어 *함수 측 선언은 정상*. `vercel.json`의 functions 블록만 *문법 위반인 채로* 남아 있었고, dev 환경(Vite middleware plugin)에서는 `vercel.json`을 읽지 않기 때문에 *세션 11 e2e·빌드 검증에서 잡히지 않은* 잠복 결함.
+
+### 수정
+
+1. `vercel.json` — `functions` 블록 *완전 제거*. buildCommand, rewrites만 남김.
+2. `api/classify.js` — 28행의 `export const config = { runtime: 'edge' };` *그대로 유지* (이 한 줄이 Edge 런타임 지정의 진실의 원천).
+3. 그 외 코드 변경 *없음*.
+
+### 검증 한계
+
+- 본 세션에서는 *Vercel 재배포는 사용자가 직접 수행*. 푸시 후 Vercel 대시보드에서 빌드 로그 확인 필요.
+- 추가 잠재 결함: ① `@anthropic-ai/sdk` v0.96.0의 Edge 런타임 호환성 — fetch 기반이라 *호환 추정*이나 실측 미완 ② `.env.local`의 ANTHROPIC_API_KEY는 *로컬 전용* — Vercel 프로젝트 설정의 *Environment Variables*에 별도 등록 필요 (사용자 직접 작업)
+- 빌드 성공 후 시나리오 A·B·C가 *프로덕션 URL*에서도 동작하는지 회귀 비교 (세션 11의 dev 동작과 동일해야 함)
+
+### 다음 세션 시작 시 할 일 — *세션 13 후보*
+
+- Vercel 재배포 결과 확인 (사용자 작업) → 빌드 성공 시 *프로덕션 URL*에서 시나리오 A·B·C 회귀 비교
+- 빌드 또 실패하면 로그 통째로 가져와서 디버그 (Anthropic SDK Edge 비호환 가능성)
+- 빌드·시나리오 성공하면 세션 11 후보였던 KV rate limit + 입력 sanitization + 로깅으로 이동
+
+### 세션 12 종료 체크리스트
+
+- [x] dev 서버 — 본 세션 띄우지 않음 (vercel.json + SESSION_LOG 텍스트 변경만)
+- [ ] Claude Code /exit 또는 창 닫기
+- [ ] git status가 깨끗한지 (이 SESSION_LOG + vercel.json 단일 커밋 후)
+- [x] SESSION_LOG.md 다음 세션 항목 채워짐
+- [ ] *git push는 사용자가 직접 실행* (자율 모드 명시 제한)
+
+### [SECURITY] 세션 12 안전 점검
+
+- [x] `.env.local` *접근·내용 출력 안 함*
+- [x] API 키 *코드·로그·커밋 메시지에 일체 포함 안 함*
+- [x] 데이터·사례·검수 트랙 변경 *없음* (텍스트 7줄 + JSON 5줄 삭제만)
