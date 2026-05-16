@@ -30,7 +30,10 @@ import { checkAndConsume, buildRateLimitResponse } from '../src/lib/llm/rateLimi
 // Vercel Edge Runtime 은 이 두 모듈을 미지원해 배포 실패. Node 런타임은 둘 다 지원.
 // 핸들러 시그니처는 Web Fetch (Request → Response) 그대로 — Vercel 이 자동 어댑팅.
 // 길 B (fetch 직접 호출로 Edge 복귀) 는 세션 13+ 후보.
-export const config = { runtime: 'nodejs20.x' };
+//
+// 세션 12 (3단계) — runtime 값은 'nodejs' 만 허용 ('nodejs20.x' 거부).
+// Node 버전은 package.json 의 engines.node 또는 Vercel 프로젝트 설정의 Node Version 으로 지정.
+export const config = { runtime: 'nodejs' };
 
 const MODEL = 'claude-haiku-4-5';
 const ALL_CASE_IDS_SET = new Set(ALL_CASE_IDS);

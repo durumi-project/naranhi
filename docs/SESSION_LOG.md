@@ -1171,3 +1171,55 @@ const action = reason.includes('자해') || reason.includes('자살') ? 'urgent_
 - [x] API 키 코드·로그·커밋 메시지 노출 *없음*
 - [x] 데이터·사례·검수 트랙 변경 *없음*
 - [x] 핸들러 로직·system prompt·rate limit *전혀 안 건드림* — 단일 runtime 값만 변경
+
+---
+
+## 2026-05-16 세션 12 (3단계) — runtime 값 'nodejs20.x' → 'nodejs'
+
+### 증상
+
+2단계 수정(`3e29c56`) 푸시 후 Vercel 빌드 또 실패:
+
+> `api/classify.js: unsupported "runtime" value in config: "nodejs20.x"`
+> `(must be one of: ["edge","experimental-edge","nodejs"])`
+
+### 원인
+
+Vercel 의 `export const config.runtime` 은 *문자열 enum* 으로 `edge` / `experimental-edge` / `nodejs` 세 값만 허용. Node 의 *버전*(20.x)은 같은 필드에서 지정하는 게 아니라 *별도 메커니즘*으로 정함:
+- `package.json` 의 `engines.node`
+- Vercel 프로젝트 설정의 *Node Version*
+
+세션 12 (2단계) 시점에 `'nodejs20.x'` 같은 형식이 *Vercel 함수 메타에 포함된다*고 잘못 가정. AWS Lambda 의 runtime 키(`nodejs20.x`)와 혼동.
+
+### 수정
+
+`api/classify.js` 의 runtime 한 줄:
+- 기존: `{ runtime: 'nodejs20.x' }`
+- 신규: `{ runtime: 'nodejs' }`
+
+Node 버전 지정은 *별도 작업* — 본 세션에서는 안 함. Vercel 기본 Node 버전 채택. 추후 *engines.node* 명시가 필요하면 세션 13+ 후보.
+
+### 검증 한계
+
+- 재배포는 사용자 직접.
+- *문서 직접 확인 안 함* — Vercel 에러 메시지가 허용 값을 명시(`["edge","experimental-edge","nodejs"]`)했으므로 신뢰. 추가 잠재 결함 가능성은 *없을 것으로 예상*하나, 단언 불가.
+
+### 다음 세션 시작 시 할 일 (세션 13 후보 — 변동 없음)
+
+- Vercel 빌드 성공 확인 후 시나리오 A·B·C 회귀
+- 빌드 성공 시: KV rate limit + 입력 sanitization + 로깅
+- *길 B*(Edge 복귀, fetch 직접 호출)는 콜드 스타트 체감 시점에 진행
+
+### 세션 12 (3단계) 종료 체크리스트
+
+- [x] dev 서버 — 본 세션 띄우지 않음
+- [ ] Claude Code /exit 또는 창 닫기
+- [ ] git status 깨끗 (단일 커밋 후)
+- [x] SESSION_LOG 갱신
+- [ ] *git push 사용자 직접*
+
+### [SECURITY] 세션 12 (3단계) 안전 점검
+
+- [x] `.env.local` 접근·내용 출력 *없음*
+- [x] API 키 *없음*
+- [x] 핸들러 로직 *전혀 안 건드림* — runtime enum 값만 갱신
