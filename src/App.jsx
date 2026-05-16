@@ -322,8 +322,13 @@ function Landing({ onStart, onDemo }) {
     <div className="max-w-6xl mx-auto px-6 pt-10 pb-20 anim-fade-in">
       <div className="grid md:grid-cols-12 gap-10 items-center mb-12">
         <div className="md:col-span-7 anim-fade-up">
-          <div className="chip mb-6" style={{ background: C.tagYellow, color: C.amberDeep }}>
-            <Sparkles size={14} /> v2 · 데이터 구동 프로토타입
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <div className="chip" style={{ background: C.tagYellow, color: C.amberDeep }}>
+              <Sparkles size={14} /> v2 · 데이터 구동 프로토타입
+            </div>
+            <div className="chip" style={{ background: C.card, color: C.inkSoft, border: `1px solid ${C.lineSoft}` }}>
+              14세 이상 학생을 위한 도구
+            </div>
           </div>
           <h1 className="font-display text-5xl md:text-6xl font-bold leading-[1.1] mb-6" style={{ color: C.ink }}>
             법은 어렵지 않아요.<br />
@@ -407,11 +412,14 @@ function StepInfo({ data, onChange, onNext, onBack }) {
       </div>
       <div className="card-base p-7 mb-5">
         <label className="block text-sm font-semibold mb-3" style={{ color: C.ink }}>나이 <span style={{ color: C.danger, fontWeight: 400 }}>· 필수</span></label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {['7세 미만', '8-10세', '11-13세', '14-15세', '16-17세', '18세 이상'].map(a => (
+        <div className="grid grid-cols-3 gap-2">
+          {['14-15세', '16-17세', '18세 이상'].map(a => (
             <button key={a} onClick={() => onChange({ ...data, age_band: a })} className={`pill-toggle ${data.age_band === a ? 'active' : ''}`}>{a}</button>
           ))}
         </div>
+        <p className="text-xs mt-3" style={{ color: C.inkMute }}>
+          14세 미만이라면 보호자와 함께 사단법인 두루(공익법센터)에 직접 문의해 주세요.
+        </p>
       </div>
       <div className="flex justify-between">
         <button onClick={onBack} className="btn-ghost"><ChevronLeft size={16} /> 이전</button>
@@ -1141,33 +1149,45 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
         </div>
       </div>
 
-      {/* M2 — LLM 친화 응답 카드 (응답이 있으면 표시) */}
-      {data.llm?.friendly_response && data.llm.friendly_response.length > 0 && (
-        <div className="anim-fade-up mb-6" style={{ animationDelay: '0.02s' }}>
-          <div className="card-base p-6" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
-            <div className="flex items-center gap-2 mb-3">
-              <MessageCircleQuestion size={18} color={C.accent} />
-              <h3 className="font-semibold text-lg" style={{ color: C.ink }}>너의 상황에 맞춰 정리해봤어요</h3>
-              {data.llm._client_meta?.stage && data.llm._client_meta.stage !== 'llm_ok' && (
-                <span className="chip text-[11px]" style={{ background: C.bg, color: C.amberDeep, padding: '2px 8px' }}>
-                  폴백 응답
-                </span>
+      {/* M2 — LLM 친화 응답 카드 (응답이 있으면 표시).
+          세션 14 옵션 A: 폴백 응답일 때는 사례 카드가 ≥1건이면 친화 카드를 숨긴다 —
+          빈 안내문(폴백 friendly_response)이 사례 카드 위에서 노이즈가 되는 자리 차단. */}
+      {(() => {
+        const fr = data.llm?.friendly_response;
+        if (!fr || fr.length === 0) return null;
+        const serverStage = data.llm?._meta?.stage;
+        const clientStage = data.llm?._client_meta?.stage;
+        const isOkStage =
+          serverStage === 'llm_ok' || serverStage === 'safety_keyword_pre_llm';
+        const isFallback = !isOkStage || Boolean(clientStage);
+        if (isFallback && allMatched.length > 0) return null;
+        return (
+          <div className="anim-fade-up mb-6" style={{ animationDelay: '0.02s' }}>
+            <div className="card-base p-6" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircleQuestion size={18} color={C.accent} />
+                <h3 className="font-semibold text-lg" style={{ color: C.ink }}>너의 상황에 맞춰 정리해봤어요</h3>
+                {isFallback && (
+                  <span className="chip text-[11px]" style={{ background: C.bg, color: C.amberDeep, padding: '2px 8px' }}>
+                    폴백 응답
+                  </span>
+                )}
+              </div>
+              <p className="leading-relaxed" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>
+                {fr}
+              </p>
+              {data.llm.ui_low_confidence_notice && (
+                <div className="mt-4 p-3" style={{ background: C.bg, border: `1px dashed ${C.line}`, borderRadius: 12 }}>
+                  <p className="text-sm" style={{ color: C.inkSoft }}>
+                    <AlertCircle size={14} color={C.amberDeep} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
+                    비슷한 사례를 찾기 어려웠어요. 직접 1388(청소년 상담) 또는 두루 공익법센터에 도움을 요청해 보세요.
+                  </p>
+                </div>
               )}
             </div>
-            <p className="leading-relaxed" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>
-              {data.llm.friendly_response}
-            </p>
-            {data.llm.ui_low_confidence_notice && (
-              <div className="mt-4 p-3" style={{ background: C.bg, border: `1px dashed ${C.line}`, borderRadius: 12 }}>
-                <p className="text-sm" style={{ color: C.inkSoft }}>
-                  <AlertCircle size={14} color={C.amberDeep} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
-                  비슷한 사례를 찾기 어려웠어요. 직접 1388(청소년 상담) 또는 두루 공익법센터에 도움을 요청해 보세요.
-                </p>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 디버그 패널 */}
       <div className="anim-fade-up mb-6" style={{ animationDelay: '0.03s' }}>

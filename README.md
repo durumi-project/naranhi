@@ -25,7 +25,7 @@
 
 ## 지금 어디까지 왔나요 — 솔직히
 
-**최종 업데이트: 2026-05-16 (세션 11 완료 — App.jsx → `/api/classify` 연동 + Vite dev API 마운트 + 클라이언트 폴백)**
+**최종 업데이트: 2026-05-16 (세션 14 완료 — 프로덕션 timeout 진단 + 길 2 후퇴 + 안전망 + UI 다듬기)**
 
 ```
 ✅ 작동하는 데모          localhost:5173에서 6단계 사용자 여정 + 안전 분기 정상
@@ -39,14 +39,14 @@
 ✅ 두루 매뉴얼 5종         활용 가능 확인됨 (docs/external/)
 ✅ 두루 직접 제공 자료     50건 사례 (50/50) + 판례 10건 (8/10) — 두루 측 변환 완료
 ✅ PDF 처리 인프라         poppler 설치, PDF 추출 준비 완료
-✅ 두루 검수 패키지 v1     docs/검수_패키지_v1.md (PENDING 61건 + 9개 자문 카테고리) — 신규
+✅ 두루 검수 패키지 v1     docs/검수_패키지_v1.md (PENDING 61건 + 9개 자문 카테고리)
 🟡 두루 변호사 검수        검수 패키지 송부·의견 수렴 단계 (병행 진행)
-🟢 LLM 통합 (M2)            App.jsx 연동 완료 — localhost:5173에서 실제 LLM 시연 가능 (vercel CLI 불필요)
-❌ 배포                    미시작 (localhost만, Vercel 첫 배포는 세션 12 후보)
+🟢 LLM 통합 (M2)            세션 12 자리(JSON + 4중 가드) 자리 회복 — localhost e2e 5/5 통과
+🟡 Vercel 배포             https://naranhi-nu.vercel.app — 세션 14 단일 커밋 푸시 후 회복 기대
 ❌ 학교 현장 노출          미시작
 ```
 
-**한 줄로**: *동작하는 데모 + 자료 71건 (M1 초과 달성) + M2 LLM 통합 완료 — `npm run dev` 한 번이면 프런트엔드 + /api/classify + Claude Haiku 4.5 풀스택 시연. 다음 세션 = Vercel 배포 + KV rate limit + 입력 sanitize.*
+**한 줄로**: *동작하는 데모 + 자료 71건 (M1 초과 달성) + M2 LLM 통합 자리 회복 — 세션 13 tool_use 실험은 프로덕션 timeout 으로 후퇴, 세션 12 자리(JSON + extractJsonString + 4중 가드) 가 e2e 5/5 통과. 세션 14 = 길 2 후퇴 + maxDuration 30s 안전망 + UI 다듬기.*
 
 ## 사전 준비
 
@@ -492,8 +492,10 @@ which pdftoppm   # /opt/homebrew/bin/pdftoppm 나와야 함
 - ✅ **App.jsx → `/api/classify` 연동** (세션 11) — Step 4 에서 비동기 호출, 응답을 `data.llm` 에 저장, 결과 화면 상단에 친화 응답 카드 노출
 - ✅ **`src/lib/llm/clientCall.js`** — 프런트 호출 래퍼 (12초 timeout / 5xx·timeout 폴백 / 4-필드 1차 검증 / 저신뢰 알림)
 - ✅ **`scripts/devApiPlugin.mjs` + `vite.config.js`** — vercel CLI 설치 없이 `npm run dev` 한 명령으로 `/api/classify` 풀스택 시연
-- 🟡 Vercel 첫 배포 + SDK Edge 호환성 실측 — 세션 12
-- ❌ KV rate limit + 입력 sanitization + 로깅 — 세션 12
+- 🟡 Vercel 첫 배포 + SDK Edge 호환성 실측 — 세션 12 (1·2·3단계: vercel.json 문법 + Edge → Node runtime + runtime enum)
+- 🟢 프로덕션 첫 배포 — https://naranhi-nu.vercel.app — Node runtime + `export const config = { runtime: 'nodejs' }`
+- 🟡 세션 13 tool_use 도입 후 *프로덕션 timeout 16건* 발생 → 세션 14 *길 2 후퇴* + `vercel.json` `maxDuration: 30` 안전망 + `src/App.jsx` 폴백 카드 옵션 A (사례 ≥1건 시 폴백 친화 카드 숨김) + 14세 미만 나이 옵션 제거
+- ❌ KV rate limit + 입력 sanitization + 로깅 — 세션 12 후보였다가 *Vercel 배포 디버그* 자리로 밀려남. 프로덕션 안정 회복 후 세션 16+ 진입
 
 ### LLM 동작 확인 (학생 팀용)
 

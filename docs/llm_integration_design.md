@@ -303,6 +303,29 @@ const response = await client.messages.create({
 - 벡터DB(pgvector) 임베딩 검색 — *방식 A 한계 시점에 검토*
 - 사례 매칭 정확도 정량 평가 (현 규칙 기반 vs LLM)
 
+### 세션 13 — tool_use 실험 + 길 2 후퇴 (세션 14 결정)
+
+세션 13 자리에서 *Anthropic Messages API tool_use* 도입(`tools` + `tool_choice: { type: 'tool', name }`) 으로 *parse_error 원천 차단* 시도. 로컬 e2e 5/5 통과. 그러나 프로덕션 배포 후 *16건 전수 300초 timeout (504)* 발생. 세션 14 진단 결과:
+
+- 정적 분석으로 가설 A·B·C·D 가능성 *낮음* — 인자 형식 정상, cache 깨짐 timeout 안 일으킴, 콜드 스타트 합산 300초 안 됨, 응답 파싱 무한 루프 없음.
+- 가설 E (`@anthropic-ai/sdk v0.96.0` + Vercel Node + tool_use 조합 호환 결함) 가능성 있음. 세션 12 코드(tool_use 없음)에서는 같은 SDK·런타임 정상 작동 — *tool_use 신규 인자*만 변수.
+- 자율 모드 push 금지로 *재배포 → 로그 관찰 사이클* 불가 → **길 2 (안전 후퇴) 채택**.
+
+세션 14 결정:
+1. tool_use 코드는 두 번 revert 됨 (`2fa7efc`, `ecc2226`). 현재 HEAD = 세션 12 정상 자리와 *바이트 동일*.
+2. 응답 형식 강제는 *시스템 프롬프트 JSON 출력 지시* + `extractJsonString` + `JSON.parse` + `validateResponse` *4중 가드* 자리로 복귀. 세션 12 e2e 자리에서 *parse_error 0건*이라 충분히 안정.
+3. `vercel.json` 의 `functions["api/classify.js"].maxDuration = 30` *안전망*으로 *행 자리 재발 시 30초 안에 강제 종료* → 비용 폭주 + 클라이언트 12초 timeout 과 *순서대로* 작동.
+
+### §3-5 tool_use 재시도 시점 (세션 15+ 후보)
+
+길 1 (tool_use) 는 *세션 16+ 이월*. 재시도 전에 *측정된 parse_error 빈도가 의미 있는 수준*인지 먼저 확인. 세션 12 자리 코드가 4중 가드로 *원문 raw 200자 보존 + 폴백* 처리하기 때문에 *학생 화면 파괴는 없음*. tool_use 의 가치는 *parse_error 0건 보장* 자리 — 측정된 손실이 *없거나 미미*하면 *길 1 재시도 비용 < 이익* 가능성 있음.
+
+길 1 재시도 시 점검 자리:
+- Anthropic 공식 문서 재독 — tools + cache_control 조합 권장 형식, `tool_choice: { type: 'tool', name }` 의 SDK 측 처리 흐름.
+- `@anthropic-ai/sdk` 최신 버전(0.96+ → 그 이상) 변경 사항, 특히 Vercel Node 호환 자리.
+- 길 B 와 묶음 — fetch 직접 호출로 SDK 우회. SDK 내부 행 자리 가설 검증.
+- 재배포 후 *프로덕션 로그 5건 이상 확보* 후 진행 (단발 timeout 으로 결론 짓지 않음).
+
 ---
 
 ## 8. 부록 — 환경 셋업 절차 (학생 팀용)
