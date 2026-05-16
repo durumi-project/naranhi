@@ -18,6 +18,10 @@ import QUESTION_TREES from './data/question_trees.json';
 import PROCEDURE_STAGES from './data/procedure_stages.json';
 import KEYWORD_RULES from './data/keyword_rules.json';
 
+// M2 LLM 통합 (세션 11) — /api/classify 호출 래퍼.
+// 로컬 classify 는 폴백용으로 유지 (네트워크·LLM 실패 시 즉시 동작).
+import { callClassify, expandMatchedCaseIds } from './lib/llm/clientCall.js';
+
 /* ============================================================================
    「나란히」 프로토타입 v2 — 데이터 구동 버전
    ----------------------------------------------------------------------------
@@ -642,20 +646,33 @@ function StepFollowUp({ tree, data, onChange, onNext, onBack }) {
   );
 }
 
-function StepLoading({ onDone }) {
+function StepLoading({ status }) {
   const [phase, setPhase] = useState(0);
-  const phases = ['사건의 핵심 요소를 살펴보고 있어요', '비슷한 공개 판례를 찾고 있어요', '현재 절차 단계를 확인하고 있어요', '필요한 서류를 정리하고 있어요'];
+  const phases = ['사건의 핵심 요소를 살펴보고 있어요', '비슷한 사례를 찾아보고 있어요', '안전 신호를 확인하고 있어요', '안내 문구를 정리하고 있어요'];
+  // LLM 응답을 기다리는 동안 시각 피드백만 phase 단계로 진행 (3.9초까지). 그 이후엔 마지막 phase 유지.
+  // step 전환은 App.jsx 의 useEffect 에서 LLM 응답 수신 후 setStep(5) 호출로 일어남.
   useEffect(() => {
-    const ts = [setTimeout(() => setPhase(1), 700), setTimeout(() => setPhase(2), 1500), setTimeout(() => setPhase(3), 2300), setTimeout(() => onDone(), 3100)];
+    const ts = [
+      setTimeout(() => setPhase(1), 700),
+      setTimeout(() => setPhase(2), 1500),
+      setTimeout(() => setPhase(3), 2300),
+    ];
     return () => ts.forEach(clearTimeout);
-  }, [onDone]);
+  }, []);
   return (
     <div className="max-w-xl mx-auto px-6 py-20 anim-fade-in text-center">
       <div style={{ width: 80, height: 80, margin: '0 auto 28px', borderRadius: 24, background: C.cardWarm, display: 'grid', placeItems: 'center', boxShadow: `0 0 0 8px ${C.tagYellow}55` }}>
         <Loader2 size={36} color={C.amberDeep} className="anim-spin" />
       </div>
       <h2 className="font-display text-3xl font-bold mb-3" style={{ color: C.ink }}>분석하고 있어요</h2>
-      <p style={{ color: C.inkSoft, marginBottom: 32 }}>잠깐만 기다려줘요.</p>
+      <p style={{ color: C.inkSoft, marginBottom: 8 }}>잠깐만 기다려줘요.</p>
+      {status === 'llm_pending' && (
+        <p style={{ color: C.inkMute, fontSize: 12, marginBottom: 32 }}>응답이 도착하는 데 보통 3~10초 정도 걸려요.</p>
+      )}
+      {status === 'llm_error' && (
+        <p style={{ color: C.amberDeep, fontSize: 13, marginBottom: 32 }}>응답이 늦어지고 있어요. 잠시 후 결과 화면으로 넘어가요.</p>
+      )}
+      {!status && <div style={{ height: 32 }} />}
       <div className="space-y-3 text-left max-w-md mx-auto">
         {phases.map((p, i) => (
           <div key={i} className="flex items-center gap-3 p-3" style={{ background: i <= phase ? C.cardWarm : 'transparent', borderRadius: 12, transition: 'background 0.4s' }}>
@@ -1066,8 +1083,19 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
   const [sortMode, setSortMode] = useState('relevance'); // 'relevance' | 'recent'
   const [expanded, setExpanded] = useState(false);
 
-  // 매칭 결과는 항상 최대 10건까지 가져온 후, UI에서 정렬·페이징
-  const allMatched = useMemo(() => matchCases(data.full_code, data.user_text, CASES, { topN: 10 }), [data.full_code, data.user_text]);
+  // M2 — LLM 매칭 우선, 폴백은 기존 규칙 기반 matchCases.
+  // 1) LLM 이 matched_case_ids 를 반환했으면 그것을 우선 위치에 배치 (1~3건).
+  // 2) 그 외 비슷한 사례는 기존 matchCases 결과에서 LLM 매칭과 중복 제거 후 보강.
+  const llmMatched = useMemo(
+    () => expandMatchedCaseIds(data.llm?.matched_case_ids ?? [], CASES),
+    [data.llm],
+  );
+  const ruleBased = useMemo(() => matchCases(data.full_code, data.user_text, CASES, { topN: 10 }), [data.full_code, data.user_text]);
+  const allMatched = useMemo(() => {
+    if (llmMatched.length === 0) return ruleBased;
+    const seen = new Set(llmMatched.map((c) => c.case_id));
+    return [...llmMatched, ...ruleBased.filter((c) => !seen.has(c.case_id))];
+  }, [llmMatched, ruleBased]);
   const matchedCases = useMemo(() => {
     const arr = [...allMatched];
     if (sortMode === 'recent') {
@@ -1112,6 +1140,34 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
           </p>
         </div>
       </div>
+
+      {/* M2 — LLM 친화 응답 카드 (응답이 있으면 표시) */}
+      {data.llm?.friendly_response && data.llm.friendly_response.length > 0 && (
+        <div className="anim-fade-up mb-6" style={{ animationDelay: '0.02s' }}>
+          <div className="card-base p-6" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <MessageCircleQuestion size={18} color={C.accent} />
+              <h3 className="font-semibold text-lg" style={{ color: C.ink }}>너의 상황에 맞춰 정리해봤어요</h3>
+              {data.llm._client_meta?.stage && data.llm._client_meta.stage !== 'llm_ok' && (
+                <span className="chip text-[11px]" style={{ background: C.bg, color: C.amberDeep, padding: '2px 8px' }}>
+                  폴백 응답
+                </span>
+              )}
+            </div>
+            <p className="leading-relaxed" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>
+              {data.llm.friendly_response}
+            </p>
+            {data.llm.ui_low_confidence_notice && (
+              <div className="mt-4 p-3" style={{ background: C.bg, border: `1px dashed ${C.line}`, borderRadius: 12 }}>
+                <p className="text-sm" style={{ color: C.inkSoft }}>
+                  <AlertCircle size={14} color={C.amberDeep} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
+                  비슷한 사례를 찾기 어려웠어요. 직접 1388(청소년 상담) 또는 두루 공익법센터에 도움을 요청해 보세요.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 디버그 패널 */}
       <div className="anim-fade-up mb-6" style={{ animationDelay: '0.03s' }}>
@@ -1236,16 +1292,46 @@ export default function App() {
     gender: '', age_band: '', user_text: '',
     classification: null, full_code: '', school_level: '',
     follow_up: {}, stage: 0,
+    llm: null,
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [safetyAction, setSafetyAction] = useState(null);
+  const [loadingStatus, setLoadingStatus] = useState(null);
 
   const reset = () => {
-    setData({ gender: '', age_band: '', user_text: '', classification: null, full_code: '', school_level: '', follow_up: {}, stage: 0 });
+    setData({ gender: '', age_band: '', user_text: '', classification: null, full_code: '', school_level: '', follow_up: {}, stage: 0, llm: null });
     setShowConfirm(false);
     setSafetyAction(null);
+    setLoadingStatus(null);
     setStep(0);
   };
+
+  // M2 — step 4 (StepLoading) 진입 시 /api/classify 비동기 호출.
+  // 응답을 data.llm 에 저장하고 step 5 로 전환. safety_signals.has_safety_flag=true 면 SafetyBranch 우회.
+  useEffect(() => {
+    if (step !== 4) return;
+    let aborted = false;
+    setLoadingStatus('llm_pending');
+    (async () => {
+      const meta = {
+        role: data.classification?.role,
+        age: data.age_band,
+        school_level: data.school_level,
+      };
+      const result = await callClassify({ text: data.user_text, meta });
+      if (aborted) return;
+      if (result.safety_signals?.has_safety_flag) {
+        const reason = (result.safety_signals.reason ?? '').toLowerCase();
+        const action = reason.includes('자해') || reason.includes('자살') ? 'urgent_self_harm' : 'urgent_domestic';
+        setSafetyAction(action);
+        return;
+      }
+      setData((d) => ({ ...d, llm: result }));
+      setLoadingStatus('llm_done');
+      setStep(5);
+    })();
+    return () => { aborted = true; };
+  }, [step, data.user_text, data.classification?.role, data.age_band, data.school_level]);
 
   const loadDemo = (persona) => {
     reset();
@@ -1309,7 +1395,7 @@ export default function App() {
           />
         )}
         {step === 3 && tree && <StepFollowUp tree={tree} data={data} onChange={setData} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
-        {step === 4 && <StepLoading onDone={() => setStep(5)} />}
+        {step === 4 && <StepLoading status={loadingStatus} />}
         {step === 5 && <StepResults data={data} onReset={reset} onNewDemo={() => setStep(0)} onClassificationUpdate={handleClassificationUpdate} />}
       </main>
     </div>

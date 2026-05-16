@@ -25,7 +25,7 @@
 
 ## 지금 어디까지 왔나요 — 솔직히
 
-**최종 업데이트: 2026-05-16 (세션 10 완료 — Vercel Edge `/api/classify` + 4-필드 응답 + caching e2e 5/5 통과)**
+**최종 업데이트: 2026-05-16 (세션 11 완료 — App.jsx → `/api/classify` 연동 + Vite dev API 마운트 + 클라이언트 폴백)**
 
 ```
 ✅ 작동하는 데모          localhost:5173에서 6단계 사용자 여정 + 안전 분기 정상
@@ -41,12 +41,12 @@
 ✅ PDF 처리 인프라         poppler 설치, PDF 추출 준비 완료
 ✅ 두루 검수 패키지 v1     docs/검수_패키지_v1.md (PENDING 61건 + 9개 자문 카테고리) — 신규
 🟡 두루 변호사 검수        검수 패키지 송부·의견 수렴 단계 (병행 진행)
-🟢 LLM 통합 (M2)            진행 중 — /api/classify Vercel Edge 통과 + 5 시나리오 e2e + caching 작동 — 갱신
-❌ 배포                    미시작 (localhost만, Vercel 첫 배포는 세션 11~12 후보)
+🟢 LLM 통합 (M2)            App.jsx 연동 완료 — localhost:5173에서 실제 LLM 시연 가능 (vercel CLI 불필요)
+❌ 배포                    미시작 (localhost만, Vercel 첫 배포는 세션 12 후보)
 ❌ 학교 현장 노출          미시작
 ```
 
-**한 줄로**: *동작하는 데모 + 자료 71건 (M1 초과 달성) + M2 LLM 통합 진행 — Vercel Edge `/api/classify` + 4-필드 응답 + caching 작동 + e2e 5/5 통과. 다음 세션 = App.jsx → API Route 연동.*
+**한 줄로**: *동작하는 데모 + 자료 71건 (M1 초과 달성) + M2 LLM 통합 완료 — `npm run dev` 한 번이면 프런트엔드 + /api/classify + Claude Haiku 4.5 풀스택 시연. 다음 세션 = Vercel 배포 + KV rate limit + 입력 sanitize.*
 
 ## 사전 준비
 
@@ -474,23 +474,25 @@ which pdftoppm   # /opt/homebrew/bin/pdftoppm 나와야 함
 
 **현재 위치**: **M2 진행 중** (LLM 통합 — Vercel Edge `/api/classify` + caching 작동, App.jsx 연동 대기).
 
-### M2 진행 상황 (세션 10 기준)
+### M2 진행 상황 (세션 11 기준)
 
 - ✅ `@anthropic-ai/sdk` + `dotenv` 설치
 - ✅ `.env.example` 템플릿 (학생 팀이 복사·편집)
 - ✅ `src/lib/llm/helloClaudeCheck.js` — Haiku 4.5 호출 + 토큰·비용·소요시간 표시
-- ✅ 백엔드 옵션 결정 — **Vercel Edge Functions** (옵션 A 확정)
-- ✅ 응답 스키마 결정 — `matched_case_ids` / `friendly_response` / `safety_signals` / `confidence`
+- ✅ 백엔드 — **Vercel Edge Functions** (옵션 A 확정)
+- ✅ 응답 스키마 — `matched_case_ids` / `friendly_response` / `safety_signals` / `confidence`
 - ✅ 사례 컨텍스트 주입 — 방식 A (사례 71건 전체 + prompt caching ephemeral)
-- ✅ Rate limit 임계값 — 분당 5 / 시간당 30 / 일일 1,000
+- ✅ Rate limit — 분당 5 / 시간당 30 / 일일 1,000
 - ✅ `api/classify.js` Vercel Edge Function
 - ✅ `src/lib/llm/systemPrompt.js` (방식 A + caching 블록)
 - ✅ `src/lib/llm/safetyKeywords.js` (1단계 키워드 안전 분기, 29개 키워드)
-- ✅ `src/lib/llm/rateLimit.js` (메모리 카운터, 분산 환경 KV는 세션 12)
+- ✅ `src/lib/llm/rateLimit.js` (메모리 카운터)
 - ✅ `vercel.json` Edge runtime 라우팅
 - ✅ `npm run llm:test` e2e — 5 시나리오 5/5 통과
-- 🟡 App.jsx → `/api/classify` 연동 — 세션 11
-- 🟡 Vercel 첫 배포 + SDK Edge 호환성 실측 — 세션 11
+- ✅ **App.jsx → `/api/classify` 연동** (세션 11) — Step 4 에서 비동기 호출, 응답을 `data.llm` 에 저장, 결과 화면 상단에 친화 응답 카드 노출
+- ✅ **`src/lib/llm/clientCall.js`** — 프런트 호출 래퍼 (12초 timeout / 5xx·timeout 폴백 / 4-필드 1차 검증 / 저신뢰 알림)
+- ✅ **`scripts/devApiPlugin.mjs` + `vite.config.js`** — vercel CLI 설치 없이 `npm run dev` 한 명령으로 `/api/classify` 풀스택 시연
+- 🟡 Vercel 첫 배포 + SDK Edge 호환성 실측 — 세션 12
 - ❌ KV rate limit + 입력 sanitization + 로깅 — 세션 12
 
 ### LLM 동작 확인 (학생 팀용)
@@ -511,10 +513,45 @@ npm run llm:check
 # 3-2. e2e 5 시나리오 (사이버폭력·가정폭력·복도 어깨·SNS 유포·보호자)
 npm run llm:test
 # → 5 시나리오 각각 매칭·safety·캐시·비용 출력
+
+# 3-3. 브라우저 풀스택 시연 (세션 11 신규)
+npm run dev
+# → http://localhost:5173 에서 /api/classify 자동 마운트
+# → vercel CLI 글로벌 설치 불필요
 ```
 
 > 비용 (실측): 호출당 ~$0.008 (~11원, cache 적중 시). 5 시나리오 e2e 총 비용 ~$0.033 (~45원).
 > 사례 추가·수정 시: `npm run llm:cases` 다시 실행해 generated 파일 갱신 후 커밋.
+
+### 팀 시연용 시나리오 3종 (세션 11 신규)
+
+`npm run dev` 후 브라우저에서 다음 3가지를 차례로 확인하면 *M2 통합이 정상 작동*함:
+
+**시나리오 A — 사이버폭력 가해 (P-001 메인 페르소나)**
+1. "시작하기" → 만 14-15세 · 중학교 · 가해 학생
+2. 상황: `단톡방에서 친구 별명을 부르면서 놀렸어요. 그 친구가 그만하라고 했는데 한 번 더 했고 캡처본이 있다고 해요.`
+3. 분류 확인 → 후속 질문 → 분석 중 (3~10초)
+4. *결과 화면 상단 친화 응답 카드*에 "단톡방·사이버폭력·학폭위" 맥락이 담긴 LLM 응답이 떠야 정상
+5. 유사 사례에 *DR-CASE-019(단톡방 별명) / SAMPLE-001 등 1~3건*이 LLM 매칭 우선 위치로 나와야 정상
+
+**시나리오 B — 가정폭력 안전 분기 (P-005)**
+1. 다시 시작 → 임의 메타
+2. 상황: `아빠가 자꾸 때려요. 집에 가기 싫어요.`
+3. *결과 화면 대신 SafetyBranchScreen*(1366·1577-1391·109·112 노출)이 떠야 정상
+4. *백엔드 호출 0회* — 로컬 키워드 1단계에서 차단 (네트워크 탭에서 `/api/classify` 호출 안 보임)
+
+**시나리오 C — 복도 어깨 신체접촉 (DR-PREC-001 매칭)**
+1. 다시 시작 → 만 14-15세 · 중학교 · 가해 학생
+2. 상황: `복도에서 친구 어깨를 쳤는데 학교에 신고됐어요. 일부러 그런 건 아니에요.`
+3. *유사 사례에 DR-PREC-001(복도 어깨)*이 LLM 매칭으로 첫 자리에 나와야 정상
+
+각 시나리오에서 결과 화면 *디버그 패널*을 열면 LLM 응답의 confidence·matched_case_ids·캐시 적중 여부를 확인 가능.
+
+### 막혔을 때
+
+- *친화 응답 카드에 "비슷한 사례를 찾기 어려웠어요" 폴백 메시지가 뜬다* → `.env.local` 의 ANTHROPIC_API_KEY 누락 또는 잘못된 키. 콘솔에서 dev 서버 로그 `[dev-api] handler error` 확인.
+- *시나리오 A에서 LLM 매칭 사례가 안 떠도 폴백 사례는 나옴* → LLM 응답이 빈 배열일 가능성. `npm run llm:test` 로 백엔드 동작 단독 검증.
+- *프록시·방화벽으로 Anthropic 호출이 막힘* → 회사·학교 와이파이 환경에서 흔함. 다른 네트워크에서 재시도.
 
 ## 마지막으로
 
