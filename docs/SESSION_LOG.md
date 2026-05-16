@@ -1108,3 +1108,66 @@ const action = reason.includes('자해') || reason.includes('자살') ? 'urgent_
 - [x] `.env.local` *접근·내용 출력 안 함*
 - [x] API 키 *코드·로그·커밋 메시지에 일체 포함 안 함*
 - [x] 데이터·사례·검수 트랙 변경 *없음* (텍스트 7줄 + JSON 5줄 삭제만)
+
+---
+
+## 2026-05-16 세션 12 (2단계) — Edge → Node.js runtime 전환
+
+### 증상
+
+세션 12 1단계 수정(`4a0af80`) 푸시 후 Vercel 재배포. 빌드는 진행됐으나 배포 단계에서 또 실패:
+
+> `The Edge Function 'api/classify' is referencing unsupported modules:`
+> `- @anthropic-ai: node:fs, node:path`
+
+### 원인
+
+`@anthropic-ai/sdk` v0.96.0 이 *내부 의존성*으로 `node:fs` / `node:path` 를 import. Vercel Edge Runtime 은 이 두 Node 코어 모듈을 미지원. 세션 10 [PENDING_DECISIONS] §"Anthropic SDK *Edge Runtime 호환성 미검증* (P3)" 가 *실제 결함으로 표면화*. 본 세션에서 1단계(`vercel.json` 문법) 통과 직후 *그 다음 라이브러리 계층 결함*이 노출된 셈.
+
+### 결정 — 길 A 채택 (Node runtime 전환)
+
+두 길:
+| 길 | 작업량 | trade-off |
+|---|---|---|
+| **A — Node.js runtime 으로 전환** | 1줄 수정 | 콜드 스타트 +수백 ms, 한국 사용자 latency 약간 증가 |
+| B — Anthropic API 를 fetch 직접 호출로 재작성 | 핸들러 절반 재작성 + 응답 파싱·usage 추출 직접 구현 | Edge runtime 그대로 유지, 콜드 스타트 최소 |
+
+**선택 근거 (시연 우선)**: 세션 12 단일 목표가 *Vercel 첫 배포 성공 + 시연 가능 URL 확보*. 길 B 는 *세션 한 개 통째로 소요* + 회귀 위험 (응답 형식 미세 차이). 길 A 는 1줄 + 핸들러 시그니처 그대로(Vercel 이 Request/Response 자동 어댑팅) → *세션 11 e2e 결과·dev 동작 그대로 보존*.
+
+길 B 는 세션 13+ 후보로 이월. 트래픽 증가·콜드 스타트 실측에서 *체감 가능*해질 때 진행.
+
+### 수정
+
+- `api/classify.js` 의 `export const config` 한 줄:
+  - 기존: `{ runtime: 'edge' }`
+  - 신규: `{ runtime: 'nodejs20.x' }`
+- 그 외 핸들러·시스템 프롬프트·rate limit·safety keywords·devApiPlugin *변경 없음*.
+- `vercel.json` 변경 없음 (1단계에서 functions 블록 이미 제거).
+
+### 검증 한계
+
+- Vercel 재배포는 사용자 직접 수행 (자율 모드 push 금지).
+- *Node runtime 콜드 스타트 실측*은 첫 호출 시 사용자가 체감. Vercel 대시보드의 *Invocation Duration* 로그로 추적 가능.
+- 응답 형식·동작은 *세션 11 dev 결과와 동일* 기대 — Vercel 의 Node ↔ Web Fetch 어댑팅이 Request/Response 시그니처 그대로 처리.
+
+### 다음 세션 시작 시 할 일 — *세션 13 후보 갱신*
+
+- Vercel 재배포 결과 확인 (빌드 성공 + 시나리오 A·B·C 회귀 동일)
+- 빌드 성공 시: KV rate limit + 입력 sanitization + 로깅 (원래 세션 12 후보였던 항목들로 복귀)
+- *길 B 진행 시점*: 콜드 스타트가 한국 사용자 체감(>1s)이거나, 동시 호출 동시성이 Node 서버리스 한계에 가까워질 때
+- 길 B 작업 범위 미리 메모: ① Anthropic Messages API 의 messages.create 를 fetch 로 직접 호출 ② cache_control:ephemeral 도 fetch body 에 그대로 포함 가능 ③ usage 객체는 응답 JSON 의 `usage` 필드 그대로 사용 가능 ④ AbortController + timeout 패턴 유지
+
+### 세션 12 (2단계) 종료 체크리스트
+
+- [x] dev 서버 — 본 세션 띄우지 않음 (1줄 수정만)
+- [ ] Claude Code /exit 또는 창 닫기
+- [ ] git status 깨끗 (이 SESSION_LOG + api/classify.js 단일 커밋 후)
+- [x] SESSION_LOG 갱신
+- [ ] *git push 사용자 직접*
+
+### [SECURITY] 세션 12 (2단계) 안전 점검
+
+- [x] `.env.local` 접근·내용 출력 *없음*
+- [x] API 키 코드·로그·커밋 메시지 노출 *없음*
+- [x] 데이터·사례·검수 트랙 변경 *없음*
+- [x] 핸들러 로직·system prompt·rate limit *전혀 안 건드림* — 단일 runtime 값만 변경
