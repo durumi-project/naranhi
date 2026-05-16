@@ -1,13 +1,6 @@
-// Vercel Serverless Function — /api/classify
+// Vercel Edge Function — /api/classify
 //
-// 세션 13 — tool_use 도입.
-// 변경:
-//   - JSON 파싱·extractJsonString·코드블록 처리 일체 제거.
-//   - Anthropic Messages API 의 tools + tool_choice 로 응답 스키마 강제.
-//   - tool_use 블록의 input 을 *그대로* 응답 객체로 사용 → parse_error 원천 차단.
-//   - 폴백은 *llm_call_failed* (네트워크·5xx) 와 *tool_use_missing*(SDK가 stop_reason 만 반환하는 극단 케이스) 두 자리만.
-//
-// 학생 입력 → 키워드 1단계 안전 → rate limit → LLM tool_use → 4-필드 응답.
+// 학생 입력 → 키워드 1단계 안전 → rate limit → LLM 호출 → 4-필드 응답.
 // 설계 문서: docs/llm_integration_design.md §3-3 (응답 스키마) + §6-2 (rate limit)
 //
 // 요청: POST { text: string, meta?: { role?, age?, school_level? } }
@@ -25,7 +18,6 @@ import {
   buildCachedSystemBlocks,
   ALL_CASE_IDS,
   CASES_CONTEXT_META,
-  NARANGI_RESPONSE_TOOL,
 } from '../src/lib/llm/systemPrompt.js';
 import {
   scanSafetyKeywords,
@@ -33,9 +25,14 @@ import {
 } from '../src/lib/llm/safetyKeywords.js';
 import { checkAndConsume, buildRateLimitResponse } from '../src/lib/llm/rateLimit.js';
 
-// 세션 12 (2단계+3단계) — Node runtime.
-// 이유: @anthropic-ai/sdk v0.96.0 이 node:fs / node:path 를 내부 import → Edge 미지원.
-// Node 버전 지정은 Vercel 기본 또는 package.json engines.node 별도.
+// 세션 12 (2단계) — Node runtime 으로 전환.
+// 이유: @anthropic-ai/sdk v0.96.0 이 내부적으로 node:fs / node:path 를 import 하는데
+// Vercel Edge Runtime 은 이 두 모듈을 미지원해 배포 실패. Node 런타임은 둘 다 지원.
+// 핸들러 시그니처는 Web Fetch (Request → Response) 그대로 — Vercel 이 자동 어댑팅.
+// 길 B (fetch 직접 호출로 Edge 복귀) 는 세션 13+ 후보.
+//
+// 세션 12 (3단계) — runtime 값은 'nodejs' 만 허용 ('nodejs20.x' 거부).
+// Node 버전은 package.json 의 engines.node 또는 Vercel 프로젝트 설정의 Node Version 으로 지정.
 export const config = { runtime: 'nodejs' };
 
 const MODEL = 'claude-haiku-4-5';
@@ -64,79 +61,68 @@ function buildUserMessage(text, meta) {
   return lines.join('\n');
 }
 
-// tool_use 가 input_schema 를 강제하지만, 다음 자리는 모델이 어길 수 있어 *서버측 보강 검증*:
-//   1. matched_case_ids 가 실재 case_id 인지 (모델이 hallucinate 한 ID 차단)
-//   2. friendly_response 가 빈 문자열인지 (UI 빈 카드 차단)
-//   3. safety_signals 누락 → 기본값 채움 (친화 응답이 살아 있는데 폴백으로 떨어지지 않게)
-//   4. confidence 누락·invalid → 기본 0.7 (e2e 실측: required 필드도 가끔 누락됨)
-//
-// 정책: *상황 정리 텍스트가 살아 있으면 통과* — 두 자리(1·2) 위반 시만 폴백.
-function validateAndNormaliseToolInput(input) {
-  if (!input || typeof input !== 'object') return { ok: false, reason: 'not_object' };
-  if (!Array.isArray(input.matched_case_ids)) return { ok: false, reason: 'matched_case_ids_not_array' };
-  for (const id of input.matched_case_ids) {
+function validateResponse(parsed) {
+  if (!parsed || typeof parsed !== 'object') return { ok: false, reason: 'not_object' };
+  if (!Array.isArray(parsed.matched_case_ids)) return { ok: false, reason: 'matched_case_ids_not_array' };
+  if (parsed.matched_case_ids.length > 5) return { ok: false, reason: 'too_many_matches' };
+  for (const id of parsed.matched_case_ids) {
     if (typeof id !== 'string' || !ALL_CASE_IDS_SET.has(id)) {
       return { ok: false, reason: `unknown_case_id:${id}` };
     }
   }
-  if (typeof input.friendly_response !== 'string' || input.friendly_response.trim().length === 0) {
-    return { ok: false, reason: 'friendly_response_empty' };
+  if (typeof parsed.friendly_response !== 'string' || parsed.friendly_response.length < 1) {
+    return { ok: false, reason: 'friendly_response_invalid' };
   }
-
-  const defaulted = [];
-  let safetySignals = input.safety_signals;
-  if (!safetySignals || typeof safetySignals !== 'object' || typeof safetySignals.has_safety_flag !== 'boolean') {
-    safetySignals = { has_safety_flag: false, reason: null };
-    defaulted.push('safety_signals');
-  } else if (!('reason' in safetySignals)) {
-    safetySignals = { ...safetySignals, reason: safetySignals.has_safety_flag ? '미상' : null };
-    defaulted.push('safety_signals.reason');
+  if (!parsed.safety_signals || typeof parsed.safety_signals !== 'object') {
+    return { ok: false, reason: 'safety_signals_missing' };
   }
-
-  let confidence = input.confidence;
-  if (typeof confidence !== 'number' || confidence < 0 || confidence > 1 || Number.isNaN(confidence)) {
-    confidence = 0.7;
-    defaulted.push('confidence');
+  if (typeof parsed.safety_signals.has_safety_flag !== 'boolean') {
+    return { ok: false, reason: 'safety_flag_not_boolean' };
   }
-
-  return {
-    ok: true,
-    normalised: {
-      matched_case_ids: input.matched_case_ids,
-      friendly_response: input.friendly_response,
-      safety_signals: safetySignals,
-      confidence,
-    },
-    defaulted,
-  };
+  if (
+    typeof parsed.confidence !== 'number' ||
+    parsed.confidence < 0 ||
+    parsed.confidence > 1
+  ) {
+    return { ok: false, reason: 'confidence_out_of_range' };
+  }
+  return { ok: true };
 }
 
 function buildFallbackResponse(reason) {
   return {
     matched_case_ids: [],
     friendly_response:
-      '분석 도우미가 잠시 쉬고 있어요. 아래 비슷한 사례를 참고해 보세요. 직접 도움이 필요하면 1388(청소년 상담) 또는 사단법인 두루에 연락해 보세요.',
+      '비슷한 사례를 찾기 어려웠어요. 가까운 어른이나 1388(청소년 상담)에 직접 도움을 요청해 보세요.',
     safety_signals: { has_safety_flag: false, reason: null },
     confidence: 0,
     _fallback_meta: { reason },
   };
 }
 
-async function callClaudeWithTool(client, userContent) {
+async function callClaude(client, userContent) {
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 800,
     system: buildCachedSystemBlocks(),
-    tools: [NARANGI_RESPONSE_TOOL],
-    tool_choice: { type: 'tool', name: NARANGI_RESPONSE_TOOL.name },
     messages: [{ role: 'user', content: userContent }],
   });
-  const toolUse = response.content.find((b) => b.type === 'tool_use' && b.name === NARANGI_RESPONSE_TOOL.name);
-  return {
-    toolUse,
-    usage: response.usage,
-    stopReason: response.stop_reason,
-  };
+  const text = response.content
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text)
+    .join('')
+    .trim();
+  return { text, usage: response.usage };
+}
+
+// LLM 출력에서 JSON 객체 추출 — 코드블록·서두/말미 텍스트 관용 처리.
+function extractJsonString(raw) {
+  const codeBlock = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (codeBlock) return codeBlock[1].trim();
+  const first = raw.indexOf('{');
+  const last = raw.lastIndexOf('}');
+  if (first >= 0 && last > first) return raw.slice(first, last + 1);
+  return raw.trim();
 }
 
 export default async function handler(request) {
@@ -184,7 +170,7 @@ export default async function handler(request) {
   const client = new Anthropic();
   let llmOut;
   try {
-    llmOut = await callClaudeWithTool(client, buildUserMessage(text, meta));
+    llmOut = await callClaude(client, buildUserMessage(text, meta));
   } catch (err) {
     return jsonResponse(
       {
@@ -195,13 +181,17 @@ export default async function handler(request) {
     );
   }
 
-  if (!llmOut.toolUse) {
+  const cleanedJson = extractJsonString(llmOut.text);
+  let parsed;
+  try {
+    parsed = JSON.parse(cleanedJson);
+  } catch {
     return jsonResponse(
       {
-        ...buildFallbackResponse('tool_use_missing'),
+        ...buildFallbackResponse('json_parse_failed'),
         _meta: {
-          stage: 'tool_use_missing',
-          stop_reason: llmOut.stopReason,
+          stage: 'parse_error',
+          raw: llmOut.text.slice(0, 400),
           usage: llmOut.usage,
         },
       },
@@ -209,7 +199,7 @@ export default async function handler(request) {
     );
   }
 
-  const v = validateAndNormaliseToolInput(llmOut.toolUse.input);
+  const v = validateResponse(parsed);
   if (!v.ok) {
     return jsonResponse(
       {
@@ -217,6 +207,7 @@ export default async function handler(request) {
         _meta: {
           stage: 'validate_error',
           reason: v.reason,
+          raw: llmOut.text.slice(0, 400),
           usage: llmOut.usage,
         },
       },
@@ -226,21 +217,17 @@ export default async function handler(request) {
 
   const usage = llmOut.usage ?? {};
   const cacheHit = (usage.cache_read_input_tokens ?? 0) > 0;
-  const result = {
-    ...v.normalised,
-    _meta: {
-      stage: 'llm_ok',
-      model: MODEL,
-      cache_hit: cacheHit,
-      defaulted_fields: v.defaulted,
-      usage: {
-        input_tokens: usage.input_tokens ?? 0,
-        output_tokens: usage.output_tokens ?? 0,
-        cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-        cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-      },
-      case_pool: CASES_CONTEXT_META,
+  parsed._meta = {
+    stage: 'llm_ok',
+    model: MODEL,
+    cache_hit: cacheHit,
+    usage: {
+      input_tokens: usage.input_tokens ?? 0,
+      output_tokens: usage.output_tokens ?? 0,
+      cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
+      cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
     },
+    case_pool: CASES_CONTEXT_META,
   };
-  return jsonResponse(result);
+  return jsonResponse(parsed);
 }
