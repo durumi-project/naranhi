@@ -131,26 +131,62 @@ naranhi/
 - `safety_signals.reason` (string|null) — true일 때 *왜 트리거됐는지* (예: "가정폭력 신호", "자해 언급"). false일 때 null.
 - `confidence` (number) — 0~1. matched_case_ids·classification 자체 신뢰도. 0.5 미만이면 UI에서 "비슷한 사례를 찾기 어려워요. 직접 도움 요청해 보세요" 노출 등.
 
-### 3-4. 호출 인터페이스 (백엔드 → SDK, prompt caching 활성)
+### 3-4. 호출 인터페이스 (세션 13 이후 — tool_use + prompt caching)
+
+세션 13에서 *자유 텍스트 JSON 출력*에서 *tool_use 강제*로 전환. 변경 동기는 §3-5.
 
 ```js
 const response = await client.messages.create({
   model: 'claude-haiku-4-5',
-  max_tokens: 600,
+  max_tokens: 800,
   system: [
     {
       type: 'text',
-      text: SYSTEM_PROMPT_TEXT,  // 사례 71건 포함, ~35K tok
+      text: SYSTEM_PROMPT_TEXT,  // 사례 71건 포함, ~27.9K tok (실측)
       cache_control: { type: 'ephemeral' },  // 5분 캐시
     },
   ],
+  tools: [NARANGI_RESPONSE_TOOL],
+  tool_choice: { type: 'tool', name: 'narangi_response' },
   messages: [{ role: 'user', content: userContent }],
 });
+
+// 응답 파싱 — tool_use 블록의 input 을 그대로 사용. JSON.parse 불필요.
+const toolUse = response.content.find(b => b.type === 'tool_use');
+const result = toolUse.input;  // 이미 객체. matched_case_ids/friendly_response/safety_signals/confidence
 ```
 
-응답 파싱은 *try/catch + JSON.parse + 4-필드 스키마 검증*. 검증 실패 시 *규칙 기반 fallback*으로 폴백 (현재 `classify.js`의 로직 유지).
+응답 파싱은 *tool_use 블록 검색 + 서버측 보강 검증*. 검증 자리:
+1. `matched_case_ids` 가 *실재 case_id* 인지 (모델 hallucinate 차단)
+2. `friendly_response` 빈 문자열 차단
+3. `safety_signals`·`confidence` 누락·invalid 시 *기본값 채움* + `_meta.defaulted_fields` 마킹 — *친화 응답 본문이 살아 있으면 통과* 원칙
 
-> *prompt caching*: 첫 호출 캐시 쓰기(1.25× input), 후속 호출 캐시 읽기(0.1× input). 5분 동안 활성. §5 비용 추산 갱신 참고.
+폴백 자리는 두 곳만 남음:
+- `llm_call_failed` — 네트워크·5xx·timeout
+- `tool_use_missing` — SDK 가 stop_reason 만 반환하는 극단 케이스 (실측 0건)
+
+> *prompt caching*: 첫 호출 캐시 쓰기(1.25× input), 후속 호출 캐시 읽기(0.1× input). 5분 동안 활성. tool_use 와 호환 — tools 토큰은 매 호출 신규지만 system block 의 사례 컨텍스트는 그대로 캐싱.
+
+### 3-5. tool_use 도입 동기 (세션 13)
+
+세션 12 Vercel 첫 배포 + 시연 단계에서 *진짜 자리* 발견:
+
+- 일부 응답에 *친화 응답이 고정 폴백 문구*("지금은 비슷한 사례 찾기 어려웠어요...")만 노출
+- LLM 은 *실제로 상황 정리를 수행*. 다만 출력이 ` ```json ` 코드블록·인사말·말미 텍스트로 *JSON 형식이 깨져* `extractJsonString` + `JSON.parse` 단계에서 *parse_error* → 폴백 문구로 *상황 정리 통째로 버려짐*
+- 세션 10 발견 이슈 1("코드블록 포함 parse 실패")이 *시연 환경에서 다시 표면화*. 가드(`extractJsonString`)가 *대부분*은 잡지만 *일부*는 여전히 새어 나감
+
+길 비교:
+
+| 길 | 작업량 | 효과 |
+|---|---|---|
+| 시스템 프롬프트 부정 명령 강화 | 작음 | 부분적 — LLM 행동 유도, 100% 보장 안 됨 |
+| **tool_use 강제** ✅ | 중간 | *parse_error 원천 차단* — input_schema 가 응답 형식 강제 |
+| Sonnet 4.6 자동 승격 | 중간 | 지시 준수 향상, 비용 3배 |
+
+세션 13 채택: **tool_use 강제**. 근거:
+- *parse_error 원천 차단*이 시연 사용성에 직결 (친화 응답이 *항상 보임*)
+- 비용 영향 미미 — output_tokens 약간 증가하나 cache 적중 시 호출당 \$0.009 수준 유지 (실측, 세션 13 e2e 5/5 통과 시 4회 \$0.037)
+- 시스템 프롬프트가 *내용 지침*에만 집중하게 단순화 → 다음 작업(어휘 압축·법조항 추가)이 깨끗
 
 ---
 
