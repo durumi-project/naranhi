@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/*.js": {
+      "runtime": "edge"
+    }
+  },
+  "buildCommand": "node scripts/buildCasesContext.mjs && vite build",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}

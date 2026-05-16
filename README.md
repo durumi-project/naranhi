@@ -25,7 +25,7 @@
 
 ## 지금 어디까지 왔나요 — 솔직히
 
-**최종 업데이트: 2026-05-16 (세션 9 완료 — M2 LLM 통합 *시작*, Hello Claude + 설계 초안)**
+**최종 업데이트: 2026-05-16 (세션 10 완료 — Vercel Edge `/api/classify` + 4-필드 응답 + caching e2e 5/5 통과)**
 
 ```
 ✅ 작동하는 데모          localhost:5173에서 6단계 사용자 여정 + 안전 분기 정상
@@ -41,12 +41,12 @@
 ✅ PDF 처리 인프라         poppler 설치, PDF 추출 준비 완료
 ✅ 두루 검수 패키지 v1     docs/검수_패키지_v1.md (PENDING 61건 + 9개 자문 카테고리) — 신규
 🟡 두루 변호사 검수        검수 패키지 송부·의견 수렴 단계 (병행 진행)
-🟢 LLM 통합 (M2)            *시작* — Anthropic SDK 통합, Hello Claude 호출 성공, 설계 초안 — 신규
-❌ 배포                    미시작 (localhost만)
+🟢 LLM 통합 (M2)            진행 중 — /api/classify Vercel Edge 통과 + 5 시나리오 e2e + caching 작동 — 갱신
+❌ 배포                    미시작 (localhost만, Vercel 첫 배포는 세션 11~12 후보)
 ❌ 학교 현장 노출          미시작
 ```
 
-**한 줄로**: *동작하는 데모 + 자료 71건 (M1 초과 달성) + M2 LLM 통합 시작 — Hello Claude 호출 + 설계 초안 + Haiku 4.5 비용 검증 완료. 다음 세션 = 백엔드 옵션 결정 + 첫 API Route.*
+**한 줄로**: *동작하는 데모 + 자료 71건 (M1 초과 달성) + M2 LLM 통합 진행 — Vercel Edge `/api/classify` + 4-필드 응답 + caching 작동 + e2e 5/5 통과. 다음 세션 = App.jsx → API Route 연동.*
 
 ## 사전 준비
 
@@ -472,35 +472,49 @@ which pdftoppm   # /opt/homebrew/bin/pdftoppm 나와야 함
 [M6] 두루 공식 협력 + 학교 노출        →  프로젝트 본 목적 도달
 ```
 
-**현재 위치**: **M2 진입 시작점** (LLM 통합 — Anthropic SDK Hello Claude 호출 성공, 설계 초안 작성 단계).
+**현재 위치**: **M2 진행 중** (LLM 통합 — Vercel Edge `/api/classify` + caching 작동, App.jsx 연동 대기).
 
-### M2 진행 상황 (세션 9 기준)
+### M2 진행 상황 (세션 10 기준)
 
 - ✅ `@anthropic-ai/sdk` + `dotenv` 설치
 - ✅ `.env.example` 템플릿 (학생 팀이 복사·편집)
 - ✅ `src/lib/llm/helloClaudeCheck.js` — Haiku 4.5 호출 + 토큰·비용·소요시간 표시
-- ✅ `npm run llm:check` 스크립트
-- ✅ `docs/llm_integration_design.md` v0.1 — 아키텍처 3옵션·API 패턴·안전 분기·비용·보안·일정
-- 🟡 백엔드 옵션 결정 (잠정 권고: Vercel Edge — 두루미팀 회의 후 확정)
-- ❌ `api/classify.js` (또는 Workers handler) 작성 — 세션 10
-- ❌ Rate limit + 입력 sanitization — 세션 12
+- ✅ 백엔드 옵션 결정 — **Vercel Edge Functions** (옵션 A 확정)
+- ✅ 응답 스키마 결정 — `matched_case_ids` / `friendly_response` / `safety_signals` / `confidence`
+- ✅ 사례 컨텍스트 주입 — 방식 A (사례 71건 전체 + prompt caching ephemeral)
+- ✅ Rate limit 임계값 — 분당 5 / 시간당 30 / 일일 1,000
+- ✅ `api/classify.js` Vercel Edge Function
+- ✅ `src/lib/llm/systemPrompt.js` (방식 A + caching 블록)
+- ✅ `src/lib/llm/safetyKeywords.js` (1단계 키워드 안전 분기, 29개 키워드)
+- ✅ `src/lib/llm/rateLimit.js` (메모리 카운터, 분산 환경 KV는 세션 12)
+- ✅ `vercel.json` Edge runtime 라우팅
+- ✅ `npm run llm:test` e2e — 5 시나리오 5/5 통과
+- 🟡 App.jsx → `/api/classify` 연동 — 세션 11
+- 🟡 Vercel 첫 배포 + SDK Edge 호환성 실측 — 세션 11
+- ❌ KV rate limit + 입력 sanitization + 로깅 — 세션 12
 
 ### LLM 동작 확인 (학생 팀용)
 
 ```bash
-# 1. 환경 셋업
+# 1. 환경 셋업 (한 번만)
 cp .env.example .env.local
 # .env.local 에 Anthropic 콘솔에서 발급한 키 붙여넣기
 
-# 2. 설치 (이미 npm install 했다면 생략)
+# 2. 의존성 + 사례 컨텍스트 빌드
 npm install
+npm run llm:cases    # 사례 71건 → casesContext.generated.js
 
-# 3. 호출 확인
+# 3-1. 최소 호출 확인 (Hello)
 npm run llm:check
-# → "📩 응답: ..." + 토큰 + 비용 표시되면 성공
+# → 응답 + 토큰 + 비용 표시
+
+# 3-2. e2e 5 시나리오 (사이버폭력·가정폭력·복도 어깨·SNS 유포·보호자)
+npm run llm:test
+# → 5 시나리오 각각 매칭·safety·캐시·비용 출력
 ```
 
-> 호출당 ~1,750 tok, 비용 ~$0.003 (~4원). 월 \$50 한도면 1만 호출 가능.
+> 비용 (실측): 호출당 ~$0.008 (~11원, cache 적중 시). 5 시나리오 e2e 총 비용 ~$0.033 (~45원).
+> 사례 추가·수정 시: `npm run llm:cases` 다시 실행해 generated 파일 갱신 후 커밋.
 
 ## 마지막으로
 

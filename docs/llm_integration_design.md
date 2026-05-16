@@ -1,19 +1,22 @@
-# LLM 통합 설계 (M2 진입 — v0.1 초안)
+# LLM 통합 설계 (M2 — v0.2)
 
-> 작성: 2026-05-16, 세션 9 (M2 시작 단계)
-> 단계: *옵션 비교 + 호출 패턴 + 안전 분기 통합 + 비용·보안 검토*
-> 결정 자리는 *옵션 비교만 적고 결정은 미룸* — 두루미팀·두루 변호사·멘토 합의 후 확정.
+> 작성: 2026-05-16, 세션 9 초안 → 세션 10 결정 반영
+> 단계: 세션 9의 *옵션 비교*에서 *팀 결정 반영 + 첫 API Route 구현*으로 진행.
 
 ---
 
 ## 0. 이 문서의 범위
 
-본 문서는 *M2 LLM 통합 시작 단계*의 설계 초안이다. 다음 두 가지를 분리한다.
+본 문서는 *M2 LLM 통합 구현 단계*의 설계 문서다. 세션 9 초안에서 *미결정 자리 4개를 모두 확정*했다.
 
-- **합의된 결정**: 모델은 Claude API(Anthropic SDK) 사용. 초기 모델은 *Haiku 4.5*. 키는 `.env.local`에서만 읽고 백엔드에서만 호출.
-- **미결정 자리**: ① 백엔드 호스팅 (Vercel Edge / Cloudflare Workers / Express+Vercel) ② 응답 파싱 스키마 ③ rate limit 임계값 ④ 시스템 프롬프트의 사례 데이터 컨텍스트 주입 방식 (전체 vs 검색 후 주입).
+- **세션 9 합의**: 모델 Claude API(Anthropic SDK), 초기 *Haiku 4.5*, 키 `.env.local`만, 백엔드 경유 호출.
+- **세션 10 신규 확정 (팀 결정)**:
+  1. **백엔드 호스팅**: 옵션 A (Vercel Edge Functions) ✅
+  2. **Rate limit**: 분당 5회 / 시간당 30회 ✅
+  3. **응답 스키마**: `matched_case_ids`, `friendly_response`, `safety_signals`, `confidence` (4-필드 정형) — §3-3 갱신 ✅
+  4. **사례 컨텍스트 주입**: 방식 A (사례 71건 전체 시스템 프롬프트에 주입) + **prompt caching ephemeral 활성화** ✅
 
-미결정 자리는 *세션 10~12*에서 단계적으로 좁힌다.
+남은 미결정 자리: ① 시스템 프롬프트의 사례 컨텍스트 *어휘 압축 정도* (현재 friendly_summary + 분류 + key_factors만 주입, 원문 D그룹 제외) ② Vercel Edge KV 도입 시점 (세션 11/12에서 메모리 → KV 마이그레이션) ③ 응답 검증 실패 시 폴백 동작.
 
 ---
 
@@ -39,51 +42,40 @@
 
 ---
 
-## 2. 아키텍처 옵션 비교
+## 2. 아키텍처 — 옵션 A (Vercel Edge Functions) 확정
 
-LLM 키는 *브라우저에 절대 노출 금지* (CLAUDE.md §1 금지사항). 따라서 *백엔드 경유 호출*이 필수. 세 가지 옵션을 비교한다.
+LLM 키는 *브라우저에 절대 노출 금지* (CLAUDE.md §1 금지사항). 따라서 *백엔드 경유 호출*이 필수.
 
-### 옵션 A — Vercel Edge Functions
+### 확정 — 옵션 A (Vercel Edge Functions) ✅
 
-- **장점**:
-  - Vite/React 정적 호스팅과 동일 플랫폼에서 API Routes 운영 가능
-  - 콜드 스타트 거의 없음 (Edge runtime), 한국 사용자에게 빠름
-  - 환경변수 관리·배포·로그가 한 대시보드에서 통합
-- **단점**:
-  - Edge runtime에서 Node 모듈 일부 제약 (현재는 SDK 호환 OK)
-  - 호출량 폭증 시 Vercel 함수 호출 단가가 누적될 수 있음
-- **비용 (대략, Hobby 무료/Pro $20)**: 무료 티어 호출 100K/월, 그 위 사용량 과금
-- **운영 부담**: 낮음. 학생 자원봉사 팀 운영에 적합
+**결정 근거**:
+- Vite/React 정적 호스팅과 동일 플랫폼 → 프런트·백엔드 한 대시보드에서 통합 관리
+- 콜드 스타트 거의 없음 (Edge runtime), 한국 사용자에게 빠른 응답
+- 학생 자원봉사 팀의 *학습 부담·운영 부담 최저*
+- Hobby 무료 티어 호출 100K/월 → M2 단계 트래픽 충분 커버
 
-### 옵션 B — Cloudflare Workers
+**확정에 따른 구조**:
+```
+naranhi/
+├── api/                          ← Vercel Edge Functions (신규)
+│   └── classify.js               ← /api/classify  (POST)
+├── src/
+│   ├── lib/
+│   │   └── llm/                  ← 백엔드 라이브러리 (Edge runtime 호환)
+│   │       ├── systemPrompt.js   ← 사례 71건 + caching 시스템 프롬프트
+│   │       ├── safetyKeywords.js ← 1단계 키워드 안전 분기
+│   │       ├── rateLimit.js      ← 분당 5 / 시간당 30 카운터 (메모리)
+│   │       └── helloClaudeCheck.js (세션 9)
+│   └── App.jsx                   ← 다음 세션에서 /api/classify 호출로 교체
+└── vercel.json                   ← Edge runtime + 라우팅 (신규)
+```
 
-- **장점**:
-  - 세계 분산 엣지에서 가장 빠른 응답 (한국·미국 모두 ms급)
-  - 단가 매우 저렴 (월 100K 무료 + 이후 호출당 \$0.50/M)
-  - 환경변수·Secrets 관리 좋음
-- **단점**:
-  - 프런트엔드(Vite)는 별도 호스팅 (Cloudflare Pages 또는 Vercel) — *프런트·백엔드 콘솔 분리*
-  - 학생 팀 학습 부담 약간 증가 (Workers 모델·KV·D1 등)
-- **비용**: 매우 저렴. 월 10만 호출까지 무료
-- **운영 부담**: 중간
+### 검토 결과 미선택 — 옵션 B/C
 
-### 옵션 C — Express + Vercel (또는 Render·Fly.io)
+- **옵션 B (Cloudflare Workers)**: 가장 저렴·빠르지만 *프런트·백엔드 콘솔 분리*가 학생 팀 학습 부담. 트래픽 폭증 시점에 재검토.
+- **옵션 C (Express + Vercel/Render)**: pgvector·세션 관리 필요해지는 M3 단계에 재검토. M2에선 과한 인프라.
 
-- **장점**:
-  - 가장 익숙한 모델 (Node + Express)
-  - 디버깅·로컬 개발 쉬움
-  - 향후 Supabase 연동·pgvector 검색·세션 관리 등 확장 용이
-- **단점**:
-  - 별도 컴퓨트 인스턴스 필요 → 콜드 스타트·유휴 비용
-  - 프런트·백엔드 *두 개 배포 파이프라인* 관리
-- **비용**: 백엔드 Render Hobby \$7/월 + Vercel 정적 무료
-- **운영 부담**: 중간~높음
-
-### 잠정 권고 (결정 미룸)
-
-*초기 트래픽은 0에 가깝고, 학생 팀 운영 부담이 가장 큰 변수*. → **옵션 A (Vercel Edge)** 가 *학습 부담·콜드 스타트·통합 관리* 모두에서 균형이 좋다는 점만 명시. 단, **확장성·세션·pgvector 검색이 필요해지는 M3 단계**에서 옵션 C로 재검토할 수 있도록 *호출 인터페이스를 추상화*해 둔다.
-
-> *결정 자리*: 두루미팀 회의에서 *호스팅 옵션 선정*. 결정 후 본 문서 *§2 잠정 권고*를 *확정*으로 갱신.
+> *M3 진입 시 재검토 트리거*: ① 사례 데이터 컨텍스트 *전체 주입*이 비용 압박이 될 때 ② 사용자별 대화 세션 필요할 때 ③ pgvector 검색 도입할 때.
 
 ---
 
@@ -116,39 +108,49 @@ LLM 키는 *브라우저에 절대 노출 금지* (CLAUDE.md §1 금지사항). 
 
 메타는 *Step 1~Step 2 UI에서 이미 수집한 정보*를 *서버에서 안전하게 prepend*. 학생이 *상황 본문에 자기 이름·실명을 적어도* LLM에 노출되기 전에 *백엔드에서 1차 sanitize* (PII 패턴 마스킹).
 
-### 3-3. 응답 스키마 (예시)
+### 3-3. 응답 스키마 (확정 — 4-필드 정형)
+
+방식 A(사례 71건 전체 주입)이라 LLM이 *사례 데이터를 모두 본 상태*에서 직접 매칭·응답을 생성한다. 따라서 분류 코드 추론 결과를 별도로 받지 않고 *최종 응답* 4-필드로 정형화한다.
 
 ```jsonc
 {
-  "classification": {
-    "type_main": "CY",
-    "subtypes": ["VB"],
-    "role_focus": "G",
-    "stage_focus": 4,
-    "school_level": "MS",
-    "confidence": 0.82
+  "matched_case_ids": ["DR-CASE-019", "SAMPLE-002"],
+  "friendly_response": "친구분, 그 상황은 학교폭력의 *언어폭력 + 사이버폭력* 양면이 있어 보여요. 비슷한 사례 2건을 함께 보여드릴게요. ...",
+  "safety_signals": {
+    "has_safety_flag": false,
+    "reason": null
   },
-  "safety_flag": false,
-  "safety_reason": null,
-  "reasoning": "온라인 단톡방 행위라 CY 1차, 언어폭력 동반으로 VB subtype. 학폭위 통보 단계.",
-  "suggested_query": "단톡방 사이버폭력 가해 학폭위 통보"
+  "confidence": 0.82
 }
 ```
 
-`suggested_query`는 *matchCases·textSimilarity에 그대로 흘려넣는 검색용 정제 문자열*. 향후 pgvector 임베딩 검색 입력으로도 동일 형태 재사용.
+**필드 명세**:
+- `matched_case_ids` (string[]) — `case_id` 값 1~3개. 우선순위 순 (가장 유사한 사례 먼저). 사례 데이터에 없는 ID 반환 시 *검증 실패 → 폴백*.
+- `friendly_response` (string) — 친화 변환 5원칙 적용 학생 눈높이 응답. 150~400자 권장. 실명·학교명 *언급 금지*.
+- `safety_signals.has_safety_flag` (boolean) — 위기 신호 감지 여부. true 시 프런트엔드는 `SafetyBranchScreen` 또는 `SafetyBanner` 노출.
+- `safety_signals.reason` (string|null) — true일 때 *왜 트리거됐는지* (예: "가정폭력 신호", "자해 언급"). false일 때 null.
+- `confidence` (number) — 0~1. matched_case_ids·classification 자체 신뢰도. 0.5 미만이면 UI에서 "비슷한 사례를 찾기 어려워요. 직접 도움 요청해 보세요" 노출 등.
 
-### 3-4. 호출 인터페이스 (백엔드 → SDK)
+### 3-4. 호출 인터페이스 (백엔드 → SDK, prompt caching 활성)
 
 ```js
 const response = await client.messages.create({
   model: 'claude-haiku-4-5',
   max_tokens: 600,
-  system: SYSTEM_PROMPT,
+  system: [
+    {
+      type: 'text',
+      text: SYSTEM_PROMPT_TEXT,  // 사례 71건 포함, ~35K tok
+      cache_control: { type: 'ephemeral' },  // 5분 캐시
+    },
+  ],
   messages: [{ role: 'user', content: userContent }],
 });
 ```
 
-응답 파싱은 *try/catch + JSON.parse + 스키마 검증*. 검증 실패 시 *규칙 기반 fallback*으로 폴백 (현재 `classify.js`의 로직 유지).
+응답 파싱은 *try/catch + JSON.parse + 4-필드 스키마 검증*. 검증 실패 시 *규칙 기반 fallback*으로 폴백 (현재 `classify.js`의 로직 유지).
+
+> *prompt caching*: 첫 호출 캐시 쓰기(1.25× input), 후속 호출 캐시 읽기(0.1× input). 5분 동안 활성. §5 비용 추산 갱신 참고.
 
 ---
 
@@ -177,47 +179,65 @@ const response = await client.messages.create({
 
 ---
 
-## 5. 비용 추산
+## 5. 비용 추산 — 방식 A (전체 주입) + prompt caching
 
 ### 5-1. 모델별 단가 (2026 기준)
 
-| 모델 | Input ($/MTok) | Output ($/MTok) | 비고 |
-|---|---|---|---|
-| Haiku 4.5 | 1.0 | 5.0 | 초기 단계, 충분한 성능 |
-| Sonnet 4.6 | 3.0 | 15.0 | 복잡 추론 필요 시 |
+| 모델 | Input ($/MTok) | Output ($/MTok) | 캐시 쓰기 (5분) | 캐시 읽기 |
+|---|---|---|---|---|
+| Haiku 4.5 | 1.0 | 5.0 | 1.25 (1.25×) | 0.10 (0.1×) |
+| Sonnet 4.6 | 3.0 | 15.0 | 3.75 | 0.30 |
 
-### 5-2. 호출당 추정 토큰
+> 캐시 쓰기는 *첫 호출에서만* 발생. 그 후 5분간 동일 prefix 호출은 캐시 읽기 단가 적용.
 
-- 시스템 프롬프트: ~1,200 tok (사례 데이터 컨텍스트 미주입 기준)
+### 5-2. 호출당 추정 토큰 (방식 A — 사례 71건 주입)
+
+- 시스템 프롬프트: ~35,000 tok
+  - 친화 변환 5원칙 + 안전 분기 규칙 + JSON 스키마: ~1,500 tok
+  - 사례 71건 (case_id + friendly_summary + 분류 + key_factors만, 원문 D그룹 제외): ~33,500 tok
 - 사용자 메시지: ~300 tok (메타 + 상황 본문)
-- 응답: ~250 tok (JSON 한 객체)
-- **호출당 합계: ~1,750 tok**
+- 응답: ~400 tok (matched_case_ids + friendly_response + safety_signals + confidence)
 
-### 5-3. 시나리오별 월 비용
+### 5-3. 캐싱 효과 — Haiku 4.5 기준
+
+**캐시 없음 (매 호출 전체 input)**:
+- 호출당: 35,300 × $1.0/MTok + 400 × $5.0/MTok = $0.0373 (~52원)
+
+**캐시 적중 (첫 호출 이후, 5분 내)**:
+- 호출당: 300 × $1.0/MTok + 35,000 × $0.1/MTok + 400 × $5.0/MTok = $0.0058 (~8원)
+- **6.4배 절감**
+
+**첫 호출 (캐시 쓰기)**:
+- 35,000 × $1.25/MTok + 300 × $1.0/MTok + 400 × $5.0/MTok = $0.0463 (~64원)
+- 캐시 쓰기는 *일반 input의 1.25배* — 첫 호출만 약간 비쌈
+
+### 5-4. 시나리오별 월 비용 (방식 A + caching)
 
 **시나리오 A — 학생 100명 × 평균 5회 호출/월 = 500 호출/월**
 
-| 모델 | 호출당 | 월 비용 (USD) | 월 비용 (KRW) |
-|---|---|---|---|
-| Haiku 4.5 | ~$0.0028 | ~$1.4 | ~1,930원 |
-| Sonnet 4.6 | ~$0.0083 | ~$4.2 | ~5,800원 |
+- 캐시 적중률 가정: *60%* (5분 TTL이라 자주 끊김. 동시 트래픽 적은 학생용 도구라 보수적 추정)
+- 캐시 적중 300회 + 캐시 미스 200회 = 300 × $0.0058 + 200 × $0.0373 = $1.74 + $7.46 = **~$9.2 (~12,700원)**
 
 **시나리오 B — 학생 500명 × 평균 5회 호출/월 = 2,500 호출/월**
 
-| 모델 | 월 비용 (USD) | 월 비용 (KRW) |
-|---|---|---|
-| Haiku 4.5 | ~$7 | ~9,700원 |
-| Sonnet 4.6 | ~$21 | ~28,900원 |
+- 캐시 적중률 가정: *80%* (트래픽 늘면 캐시 활용률 상승)
+- 2,000 × $0.0058 + 500 × $0.0373 = $11.6 + $18.65 = **~$30.3 (~41,800원)**
 
-**시나리오 C — 사례 데이터 컨텍스트 *전부 주입* (사례 71건 × ~500자 = ~35,500 tok)**
+### 5-5. 캐싱 미적용 vs 적용 비교
 
-호출당 토큰이 ~37,000 tok로 21배. Haiku 4.5 기준 호출당 ~\$0.04. 시나리오 A에 대입하면 월 \$20. → *전체 주입은 비현실적*. 따라서 *§3-3 suggested_query 기반 사후 검색* 또는 *벡터DB 검색 후 top-k 주입*으로 가야 한다 (M3 과제).
+| 시나리오 | 캐싱 없음 | 캐싱 적용 | 절감률 |
+|---|---|---|---|
+| A (500/월) | $18.7 | $9.2 | 51% |
+| B (2,500/월) | $93.3 | $30.3 | 67% |
 
-### 5-4. 초기 단계 권고
+캐싱은 *트래픽이 늘수록 효과 큼*. 학생 500명 규모에서 월 \$50 예산 한도 안에 충분히 들어옴.
 
-- 모델: **Haiku 4.5** 고정
-- 사례 컨텍스트: *주입하지 않음* (분류 + safety_flag만 LLM, 매칭은 기존 코드)
-- 월 예산 한도: **\$50 (Usage Limit)** 설정 — 학생 5,000명 분량 ÷ 안전 마진
+### 5-6. 안전장치
+
+- 모델: **Haiku 4.5** 고정 (M2 전체)
+- 월 예산 한도: **\$50 (Usage Limit)** — Anthropic 콘솔에 이미 설정
+- Rate limit (§6) + 키워드 1단계 안전 분기로 *불필요한 호출 차단*
+- 호출 로그(토큰·캐시 적중·비용)를 *익명화하여 누적* (세션 12 작업)
 
 ---
 
@@ -230,14 +250,19 @@ const response = await client.messages.create({
 - 프런트엔드 빌드에 *키가 포함되지 않도록* — Vite 환경변수는 `VITE_` prefix만 번들 노출. ANTHROPIC_API_KEY는 *prefix 없음 → 번들 안 됨* (이미 안전)
 - *백엔드에서만* `process.env.ANTHROPIC_API_KEY` 참조
 
-### 6-2. Rate Limiting
+### 6-2. Rate Limiting (확정 임계값)
 
-- *세션 단위*: 학생 1명당 분당 N회 (초기 N=5 잠정), 시간당 30회
-- *IP 단위*: 익명 사용자 보호용 + 남용 방어 (분당 10, 시간당 60)
-- *전역 일일 한도*: 1일 호출 상한 N (초기 1000) — 예산 폭주 차단
-- 한도 초과 시: *친화 메시지로 "잠시 후 다시 시도"* + *내부 알림*
+| 단위 | 분당 | 시간당 | 일일 한도 |
+|---|---|---|---|
+| **IP/세션** | 5회 | 30회 | — |
+| 전역 | — | — | 1,000회 (예산 폭주 차단) |
 
-구현: Vercel Edge 옵션 채택 시 *Upstash Redis* (무료 티어) 또는 *Vercel KV*로 카운터.
+- 한도 초과 시: *친화 메시지로 "잠시 후 다시 시도해 주세요"* (HTTP 429) + *내부 알림 (세션 12)*
+- 키워드 1단계 안전 분기에 걸린 호출은 *LLM 호출 자체를 안 함*이라 카운터 미증가 (안전 우선)
+
+**구현 단계**:
+- *세션 10 (지금)*: 메모리 기반 Map 카운터 — Vercel Edge Function 인스턴스 단위 (인스턴스 사이엔 공유 안 됨). 개발·소규모 운영용.
+- *세션 12*: Upstash Redis 또는 Vercel KV로 마이그레이션 — 인스턴스 분산 환경 OK.
 
 ### 6-3. 입력 sanitization
 
@@ -247,32 +272,35 @@ const response = await client.messages.create({
 
 ---
 
-## 7. 다음 세션 일정 (잠정)
+## 7. 세션 일정
 
-### 세션 10 — 백엔드 옵션 결정 + 첫 API Route
+### 세션 10 (진행 중) — 첫 API Route + 키워드 안전 + 메모리 rate limit
 
-- 두루미팀 회의 결과 반영 → 옵션 A/B/C 중 1개 확정
-- `api/classify.js` (또는 Workers handler) 작성 — *현재 classify.js를 LLM 호출로 교체*
-- 키워드 1단계 안전 분기 백엔드 코드
-- 로컬에서 e2e 테스트 (브라우저 → 백엔드 → SDK → 응답)
+- ✅ 팀 결정 4가지 반영 (옵션 A / 응답 스키마 / caching / rate limit)
+- ✅ `api/classify.js` Vercel Edge Function 작성
+- ✅ `src/lib/llm/systemPrompt.js` — 사례 71건 + caching
+- ✅ `src/lib/llm/safetyKeywords.js` — 키워드 1단계 안전 분기
+- ✅ `src/lib/llm/rateLimit.js` — 메모리 기반
+- ✅ `vercel.json` Edge runtime 설정
+- ✅ `npm run llm:test` — 시나리오 5개 e2e 검증
 
-### 세션 11 — 응답 파싱 + 폴백 + UI 연동
+### 세션 11 — 응답 파싱 강화 + 폴백 + UI 연동
 
-- JSON 파싱 + 스키마 검증
+- JSON 파싱 + 스키마 검증 강화 (matched_case_ids 실재 검증, friendly_response 빈 응답 차단)
 - 검증 실패 시 *현재 규칙 기반 classify*로 폴백
 - App.jsx에서 *비동기 호출 + 로딩 상태* UI
 - 시나리오 A·B·C 동작 동일성 확인
 
-### 세션 12 — Rate Limit + 입력 sanitization + 로깅
+### 세션 12 — KV rate limit + sanitization + 로깅
 
-- Upstash Redis(또는 Vercel KV) 카운터
-- 학생 실명·전화 마스킹
-- 호출 로그(분류·safety_flag·토큰·비용) *익명화하여 SESSION_LOG에 누적*
+- Upstash Redis(또는 Vercel KV)로 카운터 마이그레이션 (인스턴스 분산 환경)
+- 학생 실명·전화 마스킹 (입력 sanitization)
+- 호출 로그(분류·safety_flag·토큰·비용·캐시 적중) *익명화하여 누적*
 - 두루 변호사 검수 패키지에 *LLM 응답 샘플 100건* 동봉 준비
 
 ### 세션 13+ (M3 진입 후보)
 
-- 벡터DB(pgvector) 임베딩 검색 — *사례 데이터 컨텍스트 동적 주입*
+- 벡터DB(pgvector) 임베딩 검색 — *방식 A 한계 시점에 검토*
 - 사례 매칭 정확도 정량 평가 (현 규칙 기반 vs LLM)
 
 ---

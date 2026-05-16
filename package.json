@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/buildCasesContext.mjs && vite build",
     "preview": "vite preview",
-    "llm:check": "node src/lib/llm/helloClaudeCheck.js"
+    "llm:cases": "node scripts/buildCasesContext.mjs",
+    "llm:check": "node src/lib/llm/helloClaudeCheck.js",
+    "llm:test": "node scripts/llmTestE2E.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
