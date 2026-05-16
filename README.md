@@ -25,7 +25,7 @@
 
 ## 지금 어디까지 왔나요 — 솔직히
 
-**최종 업데이트: 2026-05-16 (세션 13 완료 — tool_use 도입으로 parse_error 원천 차단 + 친화 응답 3박자 정형)**
+**최종 업데이트: 2026-05-16 (세션 11 완료 — App.jsx → `/api/classify` 연동 + Vite dev API 마운트 + 클라이언트 폴백)**
 
 ```
 ✅ 작동하는 데모          localhost:5173에서 6단계 사용자 여정 + 안전 분기 정상
@@ -41,8 +41,8 @@
 ✅ PDF 처리 인프라         poppler 설치, PDF 추출 준비 완료
 ✅ 두루 검수 패키지 v1     docs/검수_패키지_v1.md (PENDING 61건 + 9개 자문 카테고리) — 신규
 🟡 두루 변호사 검수        검수 패키지 송부·의견 수렴 단계 (병행 진행)
-🟢 LLM 통합 (M2)            tool_use 도입 — parse_error 원천 차단, 친화 응답 3박자 정형 e2e 5/5 통과
-✅ Vercel 첫 배포          https://naranhi-nu.vercel.app (세션 12 완료)
+🟢 LLM 통합 (M2)            App.jsx 연동 완료 — localhost:5173에서 실제 LLM 시연 가능 (vercel CLI 불필요)
+❌ 배포                    미시작 (localhost만, Vercel 첫 배포는 세션 12 후보)
 ❌ 학교 현장 노출          미시작
 ```
 
@@ -474,15 +474,7 @@ which pdftoppm   # /opt/homebrew/bin/pdftoppm 나와야 함
 
 **현재 위치**: **M2 진행 중** (LLM 통합 — Vercel Edge `/api/classify` + caching 작동, App.jsx 연동 대기).
 
-### M2 진행 상황 (세션 13 기준)
-
-세션 13 핵심 변경: **tool_use 도입** — LLM 응답이 *반드시* `narangi_response` 도구의 input_schema 로만 제공됨. 자유 텍스트·코드블록·인사말 생성 불가. parse_error 원천 차단.
-
-- ✅ Vercel 첫 배포 (세션 12) — https://naranhi-nu.vercel.app, runtime: nodejs (Anthropic SDK 가 node:fs/path 의존)
-- ✅ **tool_use 강제** (세션 13) — `api/classify.js` 에 `tools` + `tool_choice` 사용, 친화 응답 *상황 정리 + 알아야 할 점 + 다음 한 걸음* 3박자
-- ✅ `validateAndNormaliseToolInput` — required 필드 누락 시 기본값 채움 + `_meta.defaulted_fields` 마킹 (친화 응답 본문이 살아 있으면 통과 원칙)
-
-#### 세션 11 까지 — 변동 없음
+### M2 진행 상황 (세션 11 기준)
 
 - ✅ `@anthropic-ai/sdk` + `dotenv` 설치
 - ✅ `.env.example` 템플릿 (학생 팀이 복사·편집)
