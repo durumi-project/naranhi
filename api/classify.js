@@ -13,17 +13,10 @@
 //     _meta: { stage, model, usage, cache_hit }
 //   }
 
-import Anthropic from '@anthropic-ai/sdk';
-import {
-  buildCachedSystemBlocks,
-  ALL_CASE_IDS,
-  CASES_CONTEXT_META,
-} from '../src/lib/llm/systemPrompt.js';
-import {
-  scanSafetyKeywords,
-  buildSafetyBranchResponse,
-} from '../src/lib/llm/safetyKeywords.js';
-import { checkAndConsume, buildRateLimitResponse } from '../src/lib/llm/rateLimit.js';
+import Anthropic from "@anthropic-ai/sdk";
+import { buildCachedSystemBlocks, ALL_CASE_IDS, CASES_CONTEXT_META } from "../src/lib/llm/systemPrompt.js";
+import { scanSafetyKeywords, buildSafetyBranchResponse } from "../src/lib/llm/safetyKeywords.js";
+import { checkAndConsume, buildRateLimitResponse } from "../src/lib/llm/rateLimit.js";
 
 // 세션 12 (2단계) — Node runtime 으로 전환.
 // 이유: @anthropic-ai/sdk v0.96.0 이 내부적으로 node:fs / node:path 를 import 하는데
@@ -33,58 +26,59 @@ import { checkAndConsume, buildRateLimitResponse } from '../src/lib/llm/rateLimi
 //
 // 세션 12 (3단계) — runtime 값은 'nodejs' 만 허용 ('nodejs20.x' 거부).
 // Node 버전은 package.json 의 engines.node 또는 Vercel 프로젝트 설정의 Node Version 으로 지정.
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: "nodejs" };
 
-const MODEL = 'claude-haiku-4-5';
+const MODEL = "claude-haiku-4-5";
 const ALL_CASE_IDS_SET = new Set(ALL_CASE_IDS);
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8' },
-  });
+function sendJson(res, body, status = 200, extraHeaders = {}) {
+  res.status(status);
+  res.setHeader("content-type", "application/json; charset=utf-8");
+  for (const [k, v] of Object.entries(extraHeaders)) {
+    res.setHeader(k, v);
+  }
+  res.send(JSON.stringify(body));
 }
 
-function extractClientKey(request) {
-  const xff = request.headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim();
-  return request.headers.get('x-real-ip') ?? 'unknown';
+function extractClientKey(req) {
+  const xff = req.headers["x-forwarded-for"];
+  if (xff) {
+    const first = Array.isArray(xff) ? xff[0] : String(xff).split(",")[0];
+    return first.trim();
+  }
+  return req.headers["x-real-ip"] ?? "unknown";
 }
 
 function buildUserMessage(text, meta) {
-  const lines = ['[메타]'];
+  const lines = ["[메타]"];
   if (meta?.role) lines.push(`역할: ${meta.role}`);
   if (meta?.age) lines.push(`나이: ${meta.age}`);
   if (meta?.school_level) lines.push(`학교급: ${meta.school_level}`);
-  if (lines.length === 1) lines.push('(메타 없음)');
-  lines.push('', '[상황]', text);
-  return lines.join('\n');
+  if (lines.length === 1) lines.push("(메타 없음)");
+  lines.push("", "[상황]", text);
+  return lines.join("\n");
 }
 
 function validateResponse(parsed) {
-  if (!parsed || typeof parsed !== 'object') return { ok: false, reason: 'not_object' };
-  if (!Array.isArray(parsed.matched_case_ids)) return { ok: false, reason: 'matched_case_ids_not_array' };
-  if (parsed.matched_case_ids.length > 5) return { ok: false, reason: 'too_many_matches' };
+  if (!parsed || typeof parsed !== "object") return { ok: false, reason: "not_object" };
+  if (!Array.isArray(parsed.matched_case_ids)) return { ok: false, reason: "matched_case_ids_not_array" };
+  if (parsed.matched_case_ids.length > 5) return { ok: false, reason: "too_many_matches" };
   for (const id of parsed.matched_case_ids) {
-    if (typeof id !== 'string' || !ALL_CASE_IDS_SET.has(id)) {
+    if (typeof id !== "string" || !ALL_CASE_IDS_SET.has(id)) {
       return { ok: false, reason: `unknown_case_id:${id}` };
     }
   }
-  if (typeof parsed.friendly_response !== 'string' || parsed.friendly_response.length < 1) {
-    return { ok: false, reason: 'friendly_response_invalid' };
+  if (typeof parsed.friendly_response !== "string" || parsed.friendly_response.length < 1) {
+    return { ok: false, reason: "friendly_response_invalid" };
   }
-  if (!parsed.safety_signals || typeof parsed.safety_signals !== 'object') {
-    return { ok: false, reason: 'safety_signals_missing' };
+  if (!parsed.safety_signals || typeof parsed.safety_signals !== "object") {
+    return { ok: false, reason: "safety_signals_missing" };
   }
-  if (typeof parsed.safety_signals.has_safety_flag !== 'boolean') {
-    return { ok: false, reason: 'safety_flag_not_boolean' };
+  if (typeof parsed.safety_signals.has_safety_flag !== "boolean") {
+    return { ok: false, reason: "safety_flag_not_boolean" };
   }
-  if (
-    typeof parsed.confidence !== 'number' ||
-    parsed.confidence < 0 ||
-    parsed.confidence > 1
-  ) {
-    return { ok: false, reason: 'confidence_out_of_range' };
+  if (typeof parsed.confidence !== "number" || parsed.confidence < 0 || parsed.confidence > 1) {
+    return { ok: false, reason: "confidence_out_of_range" };
   }
   return { ok: true };
 }
@@ -92,8 +86,7 @@ function validateResponse(parsed) {
 function buildFallbackResponse(reason) {
   return {
     matched_case_ids: [],
-    friendly_response:
-      '비슷한 사례를 찾기 어려웠어요. 가까운 어른이나 1388(청소년 상담)에 직접 도움을 요청해 보세요.',
+    friendly_response: "비슷한 사례를 찾기 어려웠어요. 가까운 어른이나 1388(청소년 상담)에 직접 도움을 요청해 보세요.",
     safety_signals: { has_safety_flag: false, reason: null },
     confidence: 0,
     _fallback_meta: { reason },
@@ -105,12 +98,12 @@ async function callClaude(client, userContent) {
     model: MODEL,
     max_tokens: 800,
     system: buildCachedSystemBlocks(),
-    messages: [{ role: 'user', content: userContent }],
+    messages: [{ role: "user", content: userContent }],
   });
   const text = response.content
-    .filter((b) => b.type === 'text')
+    .filter((b) => b.type === "text")
     .map((b) => b.text)
-    .join('')
+    .join("")
     .trim();
   return { text, usage: response.usage };
 }
@@ -119,52 +112,56 @@ async function callClaude(client, userContent) {
 function extractJsonString(raw) {
   const codeBlock = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (codeBlock) return codeBlock[1].trim();
-  const first = raw.indexOf('{');
-  const last = raw.lastIndexOf('}');
+  const first = raw.indexOf("{");
+  const last = raw.lastIndexOf("}");
   if (first >= 0 && last > first) return raw.slice(first, last + 1);
   return raw.trim();
 }
 
-export default async function handler(request) {
-  if (request.method !== 'POST') {
-    return jsonResponse({ error: 'method_not_allowed' }, 405);
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return sendJson(res, { error: "method_not_allowed" }, 405);
   }
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: 'invalid_json' }, 400);
+  // Vercel은 content-type: application/json 일 때 req.body 를 자동 파싱.
+  // 안전하게 string 도 한 번 더 처리.
+  let body = req.body;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      return sendJson(res, { error: "invalid_json" }, 400);
+    }
   }
-  const text = typeof body?.text === 'string' ? body.text.trim() : '';
+  if (body == null) {
+    return sendJson(res, { error: "invalid_json" }, 400);
+  }
+
+  const text = typeof body?.text === "string" ? body.text.trim() : "";
   const meta = body?.meta ?? {};
-  if (!text) return jsonResponse({ error: 'text_required' }, 400);
+  if (!text) return sendJson(res, { error: "text_required" }, 400);
 
   // 1단계 — 키워드 안전 분기 (LLM 호출 전, rate limit 카운터 미증가)
   const scan = scanSafetyKeywords(text);
   if (scan.triggered) {
     const safeBody = buildSafetyBranchResponse(scan);
-    safeBody._meta = { stage: 'safety_keyword_pre_llm', case_pool: CASES_CONTEXT_META };
-    return jsonResponse(safeBody);
+    safeBody._meta = { stage: "safety_keyword_pre_llm", case_pool: CASES_CONTEXT_META };
+    return sendJson(res, safeBody);
   }
 
   // Rate limit
-  const clientKey = extractClientKey(request);
+  const clientKey = extractClientKey(req);
   const rl = checkAndConsume(clientKey);
   if (!rl.ok) {
     const rlBody = buildRateLimitResponse(rl.reason, rl.retryAfterSec);
-    return new Response(JSON.stringify(rlBody), {
-      status: 429,
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-        'retry-after': String(rl.retryAfterSec ?? 60),
-      },
+    return sendJson(res, rlBody, 429, {
+      "retry-after": String(rl.retryAfterSec ?? 60),
     });
   }
 
   // LLM 호출
   if (!process.env.ANTHROPIC_API_KEY) {
-    return jsonResponse({ error: 'server_misconfigured' }, 500);
+    return sendJson(res, { error: "server_misconfigured" }, 500);
   }
 
   const client = new Anthropic();
@@ -172,12 +169,13 @@ export default async function handler(request) {
   try {
     llmOut = await callClaude(client, buildUserMessage(text, meta));
   } catch (err) {
-    return jsonResponse(
+    return sendJson(
+      res,
       {
-        ...buildFallbackResponse('llm_call_failed'),
-        _meta: { stage: 'llm_error', error: err?.message ?? String(err) },
+        ...buildFallbackResponse("llm_call_failed"),
+        _meta: { stage: "llm_error", error: err?.message ?? String(err) },
       },
-      200,
+      200
     );
   }
 
@@ -186,39 +184,41 @@ export default async function handler(request) {
   try {
     parsed = JSON.parse(cleanedJson);
   } catch {
-    return jsonResponse(
+    return sendJson(
+      res,
       {
-        ...buildFallbackResponse('json_parse_failed'),
+        ...buildFallbackResponse("json_parse_failed"),
         _meta: {
-          stage: 'parse_error',
+          stage: "parse_error",
           raw: llmOut.text.slice(0, 400),
           usage: llmOut.usage,
         },
       },
-      200,
+      200
     );
   }
 
   const v = validateResponse(parsed);
   if (!v.ok) {
-    return jsonResponse(
+    return sendJson(
+      res,
       {
         ...buildFallbackResponse(`schema_invalid:${v.reason}`),
         _meta: {
-          stage: 'validate_error',
+          stage: "validate_error",
           reason: v.reason,
           raw: llmOut.text.slice(0, 400),
           usage: llmOut.usage,
         },
       },
-      200,
+      200
     );
   }
 
   const usage = llmOut.usage ?? {};
   const cacheHit = (usage.cache_read_input_tokens ?? 0) > 0;
   parsed._meta = {
-    stage: 'llm_ok',
+    stage: "llm_ok",
     model: MODEL,
     cache_hit: cacheHit,
     usage: {
@@ -229,5 +229,5 @@ export default async function handler(request) {
     },
     case_pool: CASES_CONTEXT_META,
   };
-  return jsonResponse(parsed);
+  return sendJson(res, parsed);
 }
