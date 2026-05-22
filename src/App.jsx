@@ -379,9 +379,9 @@ function Landing({ onStart, onDemo }) {
       </div>
       <div className="grid md:grid-cols-3 gap-4 mt-8">
         {[
-          { icon: <BookOpen size={20} />, title: '쉬운 말로 풀어드려요', desc: '어려운 법률 용어 대신, 너의 학년에 맞는 표현으로.' },
-          { icon: <Search size={20} />, title: '비슷한 사례를 찾아드려요', desc: '공개 판례 중 너의 상황과 가장 비슷한 사례를 찾아 보여드려요.' },
-          { icon: <Shield size={20} />, title: '판단은 너의 몫이에요', desc: '법적 결정을 대신 내리는 것이 아닌, 네가 이해할 수 있도록 도와드려요.' },
+          { icon: <BookOpen size={20} />, title: '쉬운 말로 풀어드려요', desc: '어려운 법률 용어 대신, 학년에 맞는 표현으로 안내해 드려요.' },
+          { icon: <Search size={20} />, title: '비슷한 사례를 찾아드려요', desc: '공개 판례 중 상황과 가장 비슷한 사례를 찾아 보여드려요.' },
+          { icon: <Shield size={20} />, title: '혼자 결정하지 않아도 돼요', desc: '같이 이야기할 수 있는 어른(선생님·상담 선생님·보호자)이 있어요.' },
         ].map((it, i) => (
           <div key={i} className="card-base p-6 anim-fade-up" style={{ animationDelay: `${0.2 + i * 0.08}s` }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: C.cardWarm, color: C.amberDeep, display: 'grid', placeItems: 'center', marginBottom: 14 }}>{it.icon}</div>
@@ -478,9 +478,10 @@ function StepSituation({ data, onChange, onNext, onBack }) {
 }
 
 function SafetyBranchScreen({ action, onReset }) {
+  // 안전 분기 UI 는 *역할과 무관하게 존댓말 + 따뜻함* 으로 통일 (위기 상황은 안전 기본값).
   const messages = {
-    urgent_self_harm: { title: '잠깐, 너의 안전이 가장 중요해', subtitle: '지금 너의 마음이 많이 힘든 것 같아.' },
-    urgent_domestic: { title: '잠깐, 너의 안전이 가장 중요해', subtitle: '지금 안전한 곳에 있는지 먼저 확인할게.' },
+    urgent_self_harm: { title: '잠깐, 안전이 가장 중요해요', subtitle: '지금 마음이 많이 힘드신 것 같아요.' },
+    urgent_domestic: { title: '잠깐, 안전이 가장 중요해요', subtitle: '지금 안전한 곳에 계신지 먼저 확인할게요.' },
   };
   const m = messages[action] || messages.urgent_domestic;
   return (
@@ -496,7 +497,7 @@ function SafetyBranchScreen({ action, onReset }) {
           </div>
         </div>
         <p className="leading-relaxed mb-6" style={{ color: C.ink }}>
-          이 앱이 도울 수 있는 범위를 넘어선 상황일 수 있어요. 지금 바로 도움을 받을 수 있는 곳이 있어. 무료이고, 24시간 운영되며, 신원이 보호돼.
+          이 앱이 도울 수 있는 범위를 넘어선 상황일 수 있어요. 지금 바로 도움을 받을 수 있는 곳이 있어요. 무료이고, 24시간 운영되며, 신원이 보호됩니다.
         </p>
         <div className="space-y-3 mb-6">
           {[
@@ -520,7 +521,7 @@ function SafetyBranchScreen({ action, onReset }) {
           ))}
         </div>
         <p className="text-sm leading-relaxed mb-6" style={{ color: C.inkSoft }}>
-          연락이 망설여진다면 친구·선생님·다른 가족 어른에게 먼저 이야기해도 돼. 혼자가 아니야.
+          연락이 망설여진다면 친구·선생님·다른 가족 어른에게 먼저 이야기해 보세요. 혼자가 아니에요.
         </p>
         <button onClick={onReset} className="btn-ghost"><RotateCcw size={15} /> 다른 상황으로 다시 시작하기</button>
       </div>
@@ -1126,6 +1127,28 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
   const LEVEL_LABELS = { ES: '초등학생', MS: '중학생', HS: '고등학생', OT: '비재학' };
   const TYPE_EMOJI = { PH: '👊', VB: '💬', EX: '💰', CO: '🔄', OS: '🚫', SX: '⚠️', CY: '📱', MX: '🔀' };
 
+  // 어조 분기 — V(피해자) 만 따뜻한 반말, 그 외(G/B/W/P/U)는 존댓말 (안전 기본값).
+  const isVictim = data.classification.role === 'V';
+  const COPY = isVictim
+    ? {
+        headerTitle: (
+          <>너의 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보여요</>
+        ),
+        headerDesc:
+          '아래 내용은 공개 판례를 분석해 자동으로 정리한 안내예요. 혼자 결정하지 않아도 돼요. 선생님, 상담 선생님, 부모님 중 한 분께 말해 보세요.',
+        sectionFriendly: '너의 상황에 맞춰 정리해봤어요',
+        sectionCases: '너의 사건과 비슷한 사례를 찾았어요',
+      }
+    : {
+        headerTitle: (
+          <>현재 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보입니다</>
+        ),
+        headerDesc:
+          '아래 내용은 공개 판례를 분석해 자동으로 정리한 안내입니다. 혼자 결정하지 않으셔도 됩니다. 담임 선생님, 상담 선생님, 보호자 중 한 분과 상의해 보세요.',
+        sectionFriendly: '상황에 맞춰 정리해 드렸어요',
+        sectionCases: '사건과 비슷한 사례를 찾았습니다',
+      };
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* 헤더 */}
@@ -1136,7 +1159,7 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
           </div>
           <h2 className="font-display text-3xl md:text-4xl font-bold mb-3 leading-tight" style={{ color: C.ink }}>
             <span style={{ fontSize: '1.3em', marginRight: 8 }}>{TYPE_EMOJI[data.classification.type_main] || '🏫'}</span>
-            너의 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보여요
+            {COPY.headerTitle}
           </h2>
           <div className="flex items-center gap-2 flex-wrap mb-3">
             <span className="chip" style={{ background: C.card, color: C.inkSoft, padding: '4px 12px', fontSize: 12 }}>{ROLE_LABELS[data.classification.role]}</span>
@@ -1144,7 +1167,7 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
             <span className="chip" style={{ background: C.card, color: C.inkSoft, padding: '4px 12px', fontSize: 12 }}>{LEVEL_LABELS[data.school_level]}</span>
           </div>
           <p className="leading-relaxed max-w-2xl text-sm" style={{ color: C.inkSoft }}>
-            아래 내용은 공개 판례를 분석해 자동으로 정리한 안내예요. 법적 결정을 대신 내리는 게 아니라, 네가 상황을 이해하고 다음에 무엇을 할지 결정할 수 있도록 돕기 위한 정보예요.
+            {COPY.headerDesc}
           </p>
         </div>
       </div>
@@ -1166,7 +1189,7 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
             <div className="card-base p-6" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
               <div className="flex items-center gap-2 mb-3">
                 <MessageCircleQuestion size={18} color={C.accent} />
-                <h3 className="font-semibold text-lg" style={{ color: C.ink }}>너의 상황에 맞춰 정리해봤어요</h3>
+                <h3 className="font-semibold text-lg" style={{ color: C.ink }}>{COPY.sectionFriendly}</h3>
                 {isFallback && (
                   <span className="chip text-[11px]" style={{ background: C.bg, color: C.amberDeep, padding: '2px 8px' }}>
                     폴백 응답
@@ -1203,7 +1226,7 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
       <div className="anim-fade-up mb-6" style={{ animationDelay: '0.1s' }}>
         <div className="card-base p-7">
           <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
-            <div className="flex items-center gap-2"><Search size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>너의 사건과 비슷한 사례를 찾았어요</h3></div>
+            <div className="flex items-center gap-2"><Search size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>{COPY.sectionCases}</h3></div>
             <span className="chip text-xs" style={{ background: C.cardWarm, color: C.amberDeep, padding: '4px 12px' }}>
               {matchedCases.length}건 표시 / 전체 {allMatched.length}건 매칭
             </span>
