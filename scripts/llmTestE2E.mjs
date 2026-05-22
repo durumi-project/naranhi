@@ -1,14 +1,15 @@
-// 「나란히」 LLM E2E 테스트 — 세션 10 + W1 톤 검증 확장
+// 「나란히」 LLM E2E 테스트 — 세션 10 + W1 톤 검증 + W1.5 통일
 //
 // api/classify.js 핸들러를 *직접 import* 해서 호출 (vercel dev 불필요).
 // 시나리오 8개(기존 5 + role_focus 어조 검증 3)로 응답 검증 + prompt caching 효과 측정.
 //
 // 실행: npm run llm:test
 //
-// 안전 제약 (세션 10 + W1):
+// 안전 제약 (세션 10 + W1 + W1.5):
 // - 최대 8회 호출 (예산 안전 — 기존 5 + W1 톤 검증 3)
 // - 시나리오 #2 는 키워드 1단계에서 우회되므로 실제 LLM 호출은 ~7회
 // - prompt caching ephemeral 5분 TTL — 연속 호출이라 캐시 적중 기대
+// - W1.5: 두루 검토 결정으로 피해자(V)도 *따뜻한 존댓말*. H 시나리오 tone='formal' 로 갱신.
 
 import dotenv from 'dotenv';
 import path from 'node:path';
@@ -176,15 +177,17 @@ const SCENARIOS = [
   },
   {
     id: 'H_tone_victim_warm',
-    label: '[W1] 피해자(V) 톤 — 따뜻한 반말 + 어른 존재 강조',
+    label: '[W1.5] 피해자(V) 톤 — 따뜻한 존댓말 + 어른 존재 강조',
     body: {
       text: '친구들이 자꾸 저만 빼고 모둠을 해요. 점심도 혼자 먹고 있어요. 어떻게 해야 할지 모르겠어요.',
       meta: { role: 'V', age: 12, school_level: 'ES' },
     },
     expect: {
+      // W1.5 (두루 검토 결정): 피해자도 따뜻한 존댓말로 통일.
+      // INFORMAL_MARKERS 기반 반말 검증은 V에 더 이상 적용하지 않음 — 전 역할 formal.
       safety_flag: false,
       min_matches: 1,
-      tone: 'warm_informal',
+      tone: 'formal',
       adult_emphasis: true,
     },
   },

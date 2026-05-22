@@ -701,7 +701,7 @@ function ProcedureTimeline({ currentStage }) {
         <Clock size={18} color={C.accent} />
         <h3 className="font-semibold text-lg" style={{ color: C.ink }}>지금 어떤 단계인지 알려드릴게요</h3>
       </div>
-      <p className="text-sm mb-6" style={{ color: C.inkSoft }}>너의 답변을 바탕으로 추정한 현재 단계예요.</p>
+      <p className="text-sm mb-6" style={{ color: C.inkSoft }}>입력해 주신 내용을 바탕으로 추정한 현재 단계예요.</p>
       <div className="relative">
         {PROCEDURE_STAGES.map((s, i) => {
           const done = i < currentStage, current = i === currentStage, future = i > currentStage;
@@ -877,7 +877,7 @@ function ChecklistSection({ docs }) {
         <div className="flex items-center gap-2"><ClipboardList size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>준비하면 좋을 서류·자료</h3></div>
         <span className="chip text-xs" style={{ background: C.cardWarm, color: C.amberDeep, padding: '4px 12px' }}>{done} / {docs.length}</span>
       </div>
-      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>너의 상황에 맞춰 추천된 서류예요. 하나씩 체크해 보세요.</p>
+      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>상황에 맞춰 추천된 서류예요. 하나씩 체크해 보세요.</p>
       <div style={{ height: 6, borderRadius: 999, background: C.lineSoft, marginBottom: 20 }}>
         <div style={{ height: '100%', width: `${(done / docs.length) * 100}%`, background: C.accent, borderRadius: 999, transition: 'width 0.3s' }} />
       </div>
@@ -934,7 +934,7 @@ function FAQSection({ faqs }) {
   return (
     <div className="card-base p-7">
       <div className="flex items-center gap-2 mb-1"><MessageCircleQuestion size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>자주 묻는 질문</h3></div>
-      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>같은 상황의 친구들이 자주 궁금해 하는 질문이에요.</p>
+      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>비슷한 상황에서 자주 나오는 질문이에요.</p>
       <div className="space-y-2">{faqs.map((f, i) => {
         const isOpen = open === i;
         return (
@@ -959,7 +959,7 @@ function ResourcesSection({ resources }) {
   return (
     <div className="card-base p-7" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
       <div className="flex items-center gap-2 mb-1"><Users size={18} color={C.amberDeep} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>혼자 해결하기 어렵다면</h3></div>
-      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>너의 상황에 맞는 무료 상담처예요.</p>
+      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>상황에 맞는 무료 상담처예요.</p>
       <div className="grid sm:grid-cols-2 gap-3">{resources.map(r => (
         <div key={r.res_id} style={{ background: C.card, padding: 16, borderRadius: 14, border: `1px solid ${C.lineSoft}` }}>
           <div className="flex items-start justify-between mb-2 gap-2">
@@ -1127,27 +1127,17 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
   const LEVEL_LABELS = { ES: '초등학생', MS: '중학생', HS: '고등학생', OT: '비재학' };
   const TYPE_EMOJI = { PH: '👊', VB: '💬', EX: '💰', CO: '🔄', OS: '🚫', SX: '⚠️', CY: '📱', MX: '🔀' };
 
-  // 어조 분기 — V(피해자) 만 따뜻한 반말, 그 외(G/B/W/P/U)는 존댓말 (안전 기본값).
-  const isVictim = data.classification.role === 'V';
-  const COPY = isVictim
-    ? {
-        headerTitle: (
-          <>너의 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보여요</>
-        ),
-        headerDesc:
-          '아래 내용은 공개 판례를 분석해 자동으로 정리한 안내예요. 혼자 결정하지 않아도 돼요. 선생님, 상담 선생님, 부모님 중 한 분께 말해 보세요.',
-        sectionFriendly: '너의 상황에 맞춰 정리해봤어요',
-        sectionCases: '너의 사건과 비슷한 사례를 찾았어요',
-      }
-    : {
-        headerTitle: (
-          <>현재 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보입니다</>
-        ),
-        headerDesc:
-          '아래 내용은 공개 판례를 분석해 자동으로 정리한 안내입니다. 혼자 결정하지 않으셔도 됩니다. 담임 선생님, 상담 선생님, 보호자 중 한 분과 상의해 보세요.',
-        sectionFriendly: '상황에 맞춰 정리해 드렸어요',
-        sectionCases: '사건과 비슷한 사례를 찾았습니다',
-      };
+  // W1.5 — 두루 검토 결정: 피해자(V) 포함 전 역할 *따뜻한 존댓말 (해요체)* 로 통일.
+  // 따뜻함은 어휘·문장 구성으로 유지하고, 종결어미는 "~해요/~예요" 위주.
+  const COPY = {
+    headerTitle: (
+      <>현재 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보여요</>
+    ),
+    headerDesc:
+      '아래 내용은 공개 판례를 분석해 자동으로 정리한 안내예요. 혼자 결정하지 않으셔도 됩니다. 담임 선생님, 상담 선생님, 보호자 중 한 분과 상의해 보세요.',
+    sectionFriendly: '상황에 맞춰 정리해 봤어요',
+    sectionCases: '비슷한 사례를 찾았어요',
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
