@@ -17,6 +17,8 @@ import RESOURCES from './data/resources.json';
 import QUESTION_TREES from './data/question_trees.json';
 import PROCEDURE_STAGES from './data/procedure_stages.json';
 import KEYWORD_RULES from './data/keyword_rules.json';
+// W4-B — 회의 결과 적용: 상담 기관 카드 강화. 기존 RESOURCES 와는 별도(역할·익명성·홈페이지 필드).
+import COUNSELING_RESOURCES from './data/counseling_resources.json';
 
 // M2 LLM 통합 (세션 11) — /api/classify 호출 래퍼.
 // 로컬 classify 는 폴백용으로 유지 (네트워크·LLM 실패 시 즉시 동작).
@@ -193,6 +195,186 @@ function selectLegalTerms(userCode, schoolLevel, allTerms, options = {}) {
     .filter(t => matchAnyPattern(userCode, t.applies_to))
     .slice(0, limit)
     .map(t => ({ ...t, plain: t.explanation[schoolLevel] || t.explanation.MS }));
+}
+
+/* W4-A2 — 자주 등장하는 4개 어려운 한자어를 *UI 고정 문구* 안에서 자동으로 풀어쓰기.
+ *  - LLM friendly_response 는 systemPrompt 의 어조 분기 규칙(D) 으로 이미 처리되므로 손대지 않음.
+ *  - 여기서는 카드 제목·요약·면책 같은 *고정 문구* 안에 등장할 때 첫 1회만 괄호 설명을 덧붙인다.
+ *  - 입력이 string 이 아닐 때(JSX 등) 는 그대로 반환 — UI 가 깨지지 않도록.
+ */
+const LEGAL_TERM_GLOSSES = [
+  { term: '학교폭력대책심의위원회', gloss: '처분을 결정하는 회의' },
+  { term: '심의위원회', gloss: '학교폭력대책심의위원회를 줄여 부르는 말' },
+  { term: '행정심판', gloss: '결정에 동의하지 않을 때 다시 검토받는 절차' },
+  { term: '행정소송', gloss: '결정에 동의하지 않을 때 법원에서 다투는 절차' },
+  { term: '학폭위', gloss: '처분을 결정하는 회의' },
+];
+
+function glossLegalTerms(text) {
+  if (typeof text !== 'string' || text.length === 0) return text;
+  // 이미 괄호가 따라붙은 자리는 건드리지 않는다 — "심의위원회(...)" 같은 패턴.
+  let out = text;
+  const used = new Set();
+  for (const { term, gloss } of LEGAL_TERM_GLOSSES) {
+    if (used.has(term)) continue;
+    // term 직후 바로 '(' 가 오는 경우(예: '학교폭력대책심의위원회(학폭위)') 는 건드리지 않음.
+    const re = new RegExp(`${term}(?!\\s*\\()`, '');
+    if (re.test(out)) {
+      out = out.replace(re, `${term}(${gloss})`);
+      used.add(term);
+    }
+  }
+  return out;
+}
+
+/* W4-A1 — 현재 stage 기반 "앞으로 진행될 상황" 예상.
+ *  W2-A 학교폭력 처리 절차 5단계와 매핑. 각 항목에 *지금 할 수 있는 일* 1~2개 동봉.
+ *  반환값은 *카드로 렌더링할 단계 1~3개* 배열. 단계 끝에 도달했다면 빈 배열.
+ */
+const STAGE_FORECASTS = {
+  0: [
+    {
+      label: '학교 신고 접수',
+      summary: '담임 선생님 또는 학교 전담기구(학교 안에서 학교폭력을 다루는 팀)에 알리면 사안 처리가 시작돼요.',
+      do_now: [
+        '시간·장소·있었던 일을 짧게 메모로 정리해 두세요.',
+        '캡처·사진 같은 증거가 있다면 따로 보관해 두세요.',
+      ],
+    },
+    {
+      label: '사실확인·사안조사',
+      summary: '학교 전담조사관이 양쪽 학생 이야기를 차분히 들으며 사실을 확인해요. 보통 며칠~몇 주 안에 진행돼요.',
+      do_now: ['목격자나 함께 있던 친구를 미리 떠올려 두면 도움이 돼요.'],
+    },
+    {
+      label: '학교장 자체해결 또는 심의위원회 분기',
+      summary: '전담기구가 4가지 객관 요건(2주 이상 진단서 / 재산 피해 / 지속성 / 보복) 을 따져 자체해결 가능 여부를 검토해요. 피해 학생·보호자가 동의해야 자체해결이 가능해요.',
+      do_now: ['관계회복 프로그램 참여 의사를 미리 생각해 두면 절차가 부드러워질 수 있어요.'],
+    },
+  ],
+  1: [
+    {
+      label: '사실확인·사안조사',
+      summary: '학교 전담조사관이 양쪽 학생 이야기를 들으면서 사실관계를 정리해요.',
+      do_now: [
+        '확인서를 쓸 때 *기억나는 사실만* 적으세요. 추측·해석은 적지 않아도 돼요.',
+        '보호자에게 미리 상황을 공유해 두면 같이 준비할 수 있어요.',
+      ],
+    },
+    {
+      label: '학교장 자체해결 또는 심의위원회 분기',
+      summary: '전담기구 심의에서 자체해결로 갈지, 심의위원회로 넘길지 결정해요.',
+      do_now: ['관계회복 프로그램에 대해 알아 두면 선택지가 넓어져요.'],
+    },
+    {
+      label: '심의·처분(필요 시)',
+      summary: '심의위원회가 열리면 사안 심의와 조치(처분) 결정이 이어져요.',
+      do_now: ['지금 단계에서는 학교 안내를 따라가도 충분해요.'],
+    },
+  ],
+  2: [
+    {
+      label: '전담기구 심의 (자체해결 / 심의위 분기)',
+      summary: '조사 결과를 바탕으로 학교 전담기구가 *자체해결 가능 여부*를 심의해요. 4가지 객관 요건 + 피해 학생·보호자 동의가 모두 충족되면 자체해결로 종결돼요.',
+      do_now: [
+        '관계회복 프로그램 권유가 오면 진지하게 검토해 보세요 — 처분과는 별도로 회복을 돕는 절차예요.',
+        '피해 학생이라면 *분리 의사*를 다시 한 번 점검해 둘 수 있어요.',
+      ],
+    },
+    {
+      label: '심의위원회 심의 (자체해결 불가 시)',
+      summary: '교육지원청 학교폭력대책심의위원회가 사안을 심의해 조치(처분)를 결정해요.',
+      do_now: ['출석 통보를 받으면 변호사·상담사와 함께 진술 정리를 도울 수 있어요.'],
+    },
+  ],
+  3: [
+    {
+      label: '심의위원회 심의 통보·심의 (분기점)',
+      summary: '자체해결 요건이 충족되지 않으면 교육지원청 심의위원회로 넘어가요. 출석 통보가 오면 일정과 권리가 안내돼요.',
+      do_now: ['관계회복 프로그램은 *심의위 단계에서도* 진행될 수 있어요. 권유가 오면 검토해 보세요.'],
+    },
+    {
+      label: '처분 결정·통보',
+      summary: '심의위원회가 결정한 조치(처분)를 학교를 통해 통보받게 돼요.',
+      do_now: ['결과에 동의하지 않는 경우 *재심·행정심판·행정소송*이라는 다음 단계가 있어요.'],
+    },
+  ],
+  4: [
+    {
+      label: '심의위원회 심의 진행',
+      summary: '심의 당일에는 양측 진술을 듣고 위원들이 협의해 조치를 결정해요. 보통 1회 회의로 진행돼요.',
+      do_now: [
+        '진술서·증거 자료를 미리 정리해 두세요.',
+        '보호자 동석 또는 변호사 조력을 신청할 수 있어요.',
+      ],
+    },
+    {
+      label: '처분 결정·통보',
+      summary: '심의가 끝나면 조치(처분) 결정을 학교를 통해 안내받아요. 보통 1~2주 안에 통보돼요.',
+      do_now: ['통보 후 *행정심판* 청구 기한은 90일 이내예요. 기한을 메모해 두세요.'],
+    },
+  ],
+  5: [
+    {
+      label: '심의·처분 결정·통보',
+      summary: '심의위원회가 결정을 마치고 학교를 통해 조치 내용을 통보해요.',
+      do_now: [
+        '결과를 받으면 처분 종류와 *생활기록부 기재 여부·기간*을 함께 확인하세요.',
+        '동의하지 않는 결정이면 다음 안내(불복 절차)를 검토할 수 있어요.',
+      ],
+    },
+  ],
+  6: [
+    {
+      label: '처분 결정·통보',
+      summary: '결정 내용이 학교를 통해 안내돼요. 보통 1~2주 안에 통보돼요.',
+      do_now: ['통보 후 *행정심판* 청구 기한은 90일 이내예요.'],
+    },
+    {
+      label: '조치 이행·불복',
+      summary: '결정된 조치를 학교 일정에 따라 이행하거나, 동의하지 않을 경우 재심·행정심판을 검토할 수 있어요.',
+      do_now: ['이행 일정을 정확히 확인하고, 불복을 고민한다면 변호사·두루 공익법센터 상담을 추천해요.'],
+    },
+  ],
+  7: [
+    {
+      label: '조치 이행·불복',
+      summary: '결정된 조치를 이행하거나, 결과에 동의하지 않으면 *재심·행정심판·행정소송*을 검토할 수 있어요.',
+      do_now: [
+        '행정심판 청구는 통지 받은 날로부터 90일 이내예요.',
+        '학교에서 안내하는 이행 일정을 정확히 메모해 두세요.',
+      ],
+    },
+    {
+      label: '생활기록부 기재 처리',
+      summary: '처분 종류에 따라 학교생활기록부 기재 여부와 보존 기간이 정해져요.',
+      do_now: ['기재가 부담된다면 변호사 상담을 통해 다음 절차를 검토해 보세요.'],
+    },
+  ],
+  8: [
+    {
+      label: '재심·행정심판·행정소송 결과',
+      summary: '재심·행정심판·행정소송 절차의 결과에 따라 원처분이 유지·변경·취소될 수 있어요.',
+      do_now: ['절차 진행 중에는 변호사·두루 공익법센터에 정기적으로 상황을 공유해 두세요.'],
+    },
+    {
+      label: '형사·민사 병행 검토',
+      summary: '필요에 따라 형사 고소·민사 손해배상이 같이 진행될 수 있어요.',
+      do_now: ['형사·민사 절차는 학폭위 결과와 별도로 진행돼요. 변호사 안내를 받는 것이 안전해요.'],
+    },
+  ],
+  9: [
+    {
+      label: '형사·민사 절차 진행',
+      summary: '학교 안 절차와 별도로 형사·민사 절차가 진행돼요. 학교 안 절차의 결과가 직접 형사·민사 결과로 이어지진 않아요.',
+      do_now: ['전 과정에서 변호사 동행을 권장해요. 두루 공익법센터에 상담을 신청해 보세요.'],
+    },
+  ],
+};
+
+function getStageForecast(stageNum) {
+  const safe = Number.isInteger(stageNum) ? Math.min(Math.max(stageNum, 0), 9) : 0;
+  return STAGE_FORECASTS[safe] || [];
 }
 
 /* ============================================================================
@@ -942,11 +1124,12 @@ function ProcedureTimeline({ currentStage }) {
               </div>
               <div className="flex-1 pt-0.5">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="font-semibold" style={{ color: future ? C.inkMute : C.ink }}>{s.label}</span>
+                  {/* W4-A2 — 학폭위·심의위원회 등 어려운 한자어가 들어가면 자동으로 괄호 풀이 첨가. */}
+                  <span className="font-semibold" style={{ color: future ? C.inkMute : C.ink }}>{glossLegalTerms(s.label)}</span>
                   {current && <span className="chip text-[11px]" style={{ background: C.tagYellow, color: C.amberDeep, padding: '2px 10px' }}>지금 여기</span>}
                   {done && <span className="chip text-[11px]" style={{ background: C.tagBlue, color: C.accent, padding: '2px 10px' }}>완료</span>}
                 </div>
-                <p className="text-sm" style={{ color: future ? C.inkMute : C.inkSoft }}>{s.description}</p>
+                <p className="text-sm" style={{ color: future ? C.inkMute : C.inkSoft }}>{glossLegalTerms(s.description)}</p>
               </div>
             </div>
           );
@@ -1172,6 +1355,147 @@ function FAQSection({ faqs }) {
           </div>
         );
       })}</div>
+    </div>
+  );
+}
+
+/* W4-A1 — 앞으로 진행될 상황 카드. 회의 결과(항목 6) 반영: 사용자는 *결과* 보다 *앞으로 일어날 일*에
+ * 정보 욕구가 더 큼. 현재 stage 기반으로 다음 1~3단계를 카드로 보여준다. */
+function StageForecastSection({ stage }) {
+  const forecast = getStageForecast(stage);
+  if (forecast.length === 0) return null;
+  return (
+    <div className="card-base p-7">
+      <div className="flex items-center gap-2 mb-1">
+        <ArrowRight size={18} color={C.accent} />
+        <h3 className="font-semibold text-lg" style={{ color: C.ink }}>앞으로 어떻게 진행될까요</h3>
+      </div>
+      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>
+        지금 단계에서 자주 이어지는 흐름이에요. *실제 절차는 상황과 학교 운영 기준에 따라 달라질 수 있어요*.
+      </p>
+      <ol className="space-y-3" style={{ paddingLeft: 0, listStyle: 'none' }}>
+        {forecast.map((f, i) => (
+          <li key={i} style={{
+            background: i === 0 ? C.cardWarm : C.bg,
+            border: `1px solid ${i === 0 ? C.line : C.lineSoft}`,
+            borderRadius: 14, padding: 16,
+            display: 'flex', gap: 14,
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+              background: i === 0 ? C.amber : C.lineSoft,
+              color: i === 0 ? 'white' : C.inkSoft,
+              display: 'grid', placeItems: 'center',
+              fontSize: 13, fontWeight: 700,
+            }}>{i + 1}</div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="font-semibold text-sm" style={{ color: C.ink }}>{glossLegalTerms(f.label)}</span>
+                {i === 0 && (
+                  <span className="chip text-[10px]" style={{ background: C.amberDeep, color: 'white', padding: '2px 8px' }}>
+                    다음 단계
+                  </span>
+                )}
+              </div>
+              <p className="text-sm leading-relaxed mb-2" style={{ color: C.inkSoft }}>
+                {glossLegalTerms(f.summary)}
+              </p>
+              {f.do_now && f.do_now.length > 0 && (
+                <div style={{ background: C.card, border: `1px dashed ${C.lineSoft}`, borderRadius: 10, padding: '10px 12px' }}>
+                  <div className="text-[11px] font-semibold mb-1" style={{ color: C.amberDeep }}>지금 할 수 있는 일</div>
+                  <ul className="space-y-1">
+                    {f.do_now.map((d, j) => (
+                      <li key={j} className="flex gap-2 text-xs leading-relaxed" style={{ color: C.inkSoft }}>
+                        <Check size={12} color={C.accent} style={{ marginTop: 3, flexShrink: 0 }} />
+                        <span>{glossLegalTerms(d)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+      {/* W4-B 화해·중재 강조 — 회의 결과(항목 7) 반영. 모든 stage 결과 화면에 한 줄 고정 안내. */}
+      <div style={{
+        marginTop: 18, padding: 14, borderRadius: 12,
+        background: C.tagBlue, border: `1px solid ${C.line}`,
+        display: 'flex', gap: 12,
+      }}>
+        <Heart size={16} color={C.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+        <div className="text-sm leading-relaxed" style={{ color: C.ink }}>
+          학교장 자체해결, <strong>관계회복 프로그램</strong>처럼 법적 절차 외에도 화해와 회복으로 도움받을 수 있는 길이 있어요.
+          처분만이 답이 아니라는 점, 같이 기억해 둬요.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* W4-B2 — 상담 기관 카드 강화 (회의 결과 항목 7).
+ *  - 기존 ResourcesSection 은 데이터 매칭 기반으로 유지.
+ *  - 이 컴포넌트는 *상수 데이터(counseling_resources.json)* 를 화해·중재 / 24시간 / 익명 배지 포함해 강조. */
+function CounselingResourcesSection({ resources }) {
+  if (!resources || resources.length === 0) return null;
+  return (
+    <div className="card-base p-7" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
+      <div className="flex items-center gap-2 mb-1">
+        <Users size={18} color={C.amberDeep} />
+        <h3 className="font-semibold text-lg" style={{ color: C.ink }}>같이 이야기할 수 있는 곳</h3>
+      </div>
+      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>
+        혼자 결정하지 않으셔도 됩니다. 각 기관의 *역할·운영 시간·익명성*을 참고해서 편한 곳을 골라 보세요.
+      </p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {resources.map((r) => (
+          <div key={r.id} style={{
+            background: C.card, padding: 16, borderRadius: 14,
+            border: `1px solid ${C.lineSoft}`,
+            display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-semibold text-sm" style={{ color: C.ink }}>{r.name}</span>
+              {r.web && (
+                <a href={r.web} target="_blank" rel="noreferrer noopener"
+                  style={{ color: C.accent, fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <ExternalLink size={11} /> 홈페이지
+                </a>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {r.hours === '24시간' && (
+                <span className="chip text-[10px]" style={{ background: C.tagBlue, color: C.accent, padding: '2px 8px' }}>
+                  <Clock size={10} /> 24시간
+                </span>
+              )}
+              {r.free && (
+                <span className="chip text-[10px]" style={{ background: C.tagYellow, color: C.amberDeep, padding: '2px 8px' }}>
+                  무료
+                </span>
+              )}
+              {r.anonymous && (
+                <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
+                  익명 가능
+                </span>
+              )}
+              {!r.anonymous && (
+                <span className="chip text-[10px]" style={{ background: C.bg, color: C.inkMute, padding: '2px 8px' }}>
+                  실명 필요
+                </span>
+              )}
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{r.role}</p>
+            <div className="flex items-center justify-between gap-2 mt-1" style={{ borderTop: `1px dashed ${C.lineSoft}`, paddingTop: 8 }}>
+              <div className="flex items-center gap-2" style={{ color: C.accent, fontSize: 13, fontWeight: 600 }}>
+                {/^\d/.test(r.phone) ? <Phone size={12} /> : <Info size={12} />}
+                <span>{r.phone}</span>
+              </div>
+              <span className="text-[11px]" style={{ color: C.inkMute }}>{r.hours}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1434,6 +1758,11 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
         <ProcedureTimeline currentStage={data.stage} />
       </div>
 
+      {/* W4-A1 — 앞으로 진행될 상황 (회의 결과 항목 6) */}
+      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.08s' }}>
+        <StageForecastSection stage={data.stage} />
+      </div>
+
       {/* 유사 사례 */}
       <div className="anim-fade-up mb-6" style={{ animationDelay: '0.1s' }}>
         <div className="card-base p-7">
@@ -1443,7 +1772,12 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
               {matchedCases.length}건 표시 / 전체 {allMatched.length}건 매칭
             </span>
           </div>
-          <p className="text-sm mb-4" style={{ color: C.inkSoft }}>카드를 누르면 어떤 부분이 결정적이었는지 자세히 볼 수 있어요.</p>
+          <p className="text-sm mb-1" style={{ color: C.inkSoft }}>카드를 누르면 어떤 부분이 결정적이었는지 자세히 볼 수 있어요.</p>
+          {/* W4-A3 — 사례 면책 1줄. 비슷한 사례 ≠ 같은 결과. */}
+          <p className="text-xs mb-4 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
+            <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
+            <span>이 사례들이 실제 상황과 같은 결과로 이어진다는 뜻은 아니에요. 각 사건은 사실관계에 따라 판단이 달라질 수 있어요.</span>
+          </p>
 
           {/* 정렬 토글 */}
           {allMatched.length > 1 && (
@@ -1506,7 +1840,12 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
         <div className="anim-fade-up" style={{ animationDelay: '0.25s' }}><FAQSection faqs={matchedFaqs} /></div>
       </div>
 
-      {/* 기관 */}
+      {/* W4-B2 — 강화된 상담 기관 카드 (회의 결과 항목 7). 24시간/익명/무료 배지 + 홈페이지 링크. */}
+      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.28s' }}>
+        <CounselingResourcesSection resources={COUNSELING_RESOURCES} />
+      </div>
+
+      {/* 기존 매칭 기반 기관 (보완) */}
       <div className="anim-fade-up mb-8" style={{ animationDelay: '0.3s' }}>
         <ResourcesSection resources={matchedResources} />
       </div>
@@ -1529,7 +1868,7 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
       <footer className="pt-8 text-center" style={{ borderTop: `1px solid ${C.lineSoft}` }}>
         <div className="font-display text-base font-bold mb-2" style={{ color: C.ink }}>나란히 v2 · 데이터 구동 프로토타입</div>
         <p className="text-xs" style={{ color: C.inkMute }}>두루미팀 · 두루 공익법센터 협력 · 테크포임팩트 캠퍼스<br />
-          판례 {CASES.length}건 · 서류 {DOCUMENTS.length}건 · 용어 {LEGAL_TERMS.length}건 · FAQ {FAQS.length}건 · 기관 {RESOURCES.length}건
+          판례 {CASES.length}건 · 서류 {DOCUMENTS.length}건 · 용어 {LEGAL_TERMS.length}건 · FAQ {FAQS.length}건 · 기관 {RESOURCES.length}건 · 상담 {COUNSELING_RESOURCES.length}곳
         </p>
       </footer>
 
