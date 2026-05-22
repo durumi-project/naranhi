@@ -96,7 +96,7 @@ export function buildSafetyBranchResponse(scan) {
   return {
     matched_case_ids: [],
     friendly_response:
-      '걱정되는 상황이 보여요. 지금 도움 줄 수 있는 곳을 먼저 알려드릴게요. 학교폭력 안내보다 *지금 너의 안전*이 우선이에요.',
+      '걱정되는 상황이 보여요. 지금 도움 받을 수 있는 곳을 먼저 알려드릴게요. 학교폭력 안내보다 *지금 안전*이 우선이에요.',
     safety_signals: {
       has_safety_flag: true,
       reason: scan.group_label ?? '위기 신호',

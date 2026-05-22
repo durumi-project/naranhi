@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "llm:cases": "node scripts/buildCasesContext.mjs",
     "llm:check": "node src/lib/llm/helloClaudeCheck.js",
-    "llm:test": "node scripts/llmTestE2E.mjs"
+    "llm:test": "node scripts/llmTestE2E.mjs",
+    "llm:keywords": "node scripts/keywordSuggestE2E.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

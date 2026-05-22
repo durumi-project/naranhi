@@ -30,8 +30,18 @@ const { default: handler } = await import('../api/classify.js');
 // ───────────────────────────────────────────────────────────────
 // 어조 검증 헬퍼 (W1)
 // ───────────────────────────────────────────────────────────────
-// 존댓말(formal) 마커: 합쇼체·해요체 종결과 안내형 명령
-const FORMAL_MARKERS = ['습니다', '입니다', '됩니다', '됩니다', '하세요', '보세요', '주세요', '드립니다', '드려요'];
+// 존댓말(formal) 마커: 합쇼체·해요체 종결과 안내형 명령.
+// W1.5 (두루 검토 결정): 기본 해요체 + 공식 안내에만 합쇼체. 마커 풀을 *해요체 종결*도 포함하도록 확장.
+const FORMAL_MARKERS = [
+  // 합쇼체
+  '습니다', '입니다', '됩니다', '드립니다', '있습니다', '없습니다',
+  // 해요체 종결 (W1.5 기본 어조)
+  '해요', '예요', '에요', '이에요', '네요', '봐요', '돼요',
+  '있어요', '없어요', '같아요', '와요', '가요', '돼요', '거예요',
+  // 명령·청유형 (해요체/합쇼체 안내)
+  '하세요', '보세요', '주세요', '두세요', '드세요', '받으세요', '말해 보세요',
+  '드려요', '알려', '안내',
+];
 // 따뜻한 반말(informal) 마커: 너 호칭 + 반말 종결어미.
 // "구나/이야/거야/보자" 같은 반말 어미는 존댓말 응답에 거의 등장하지 않으므로 강한 지표.
 const INFORMAL_MARKERS = [
@@ -195,15 +205,28 @@ const SCENARIOS = [
 
 // 분당 5회/IP rate limit 회피 — 시나리오마다 고유 IP 사용.
 // (rateLimit 모듈 자체는 운영 동작 그대로, 테스트만 다른 키 사용)
+//
+// 세션 19 (외부 개발자 작업): classify.js 가 Vercel Node runtime (req, res) 시그니처로 전환됨.
+// 따라서 테스트도 Web Fetch Request 가 아니라 *Node (req, res) 어댑터*로 호출해야 한다.
 function makeRequest(body, scenarioIdx) {
-  return new Request('http://localhost/api/classify', {
+  const req = {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       'x-forwarded-for': `127.0.0.${10 + scenarioIdx}`,
     },
-    body: JSON.stringify(body),
-  });
+    body,
+  };
+  const resp = { status: 200, headers: {}, body: null };
+  const res = {
+    status(code) { resp.status = code; return res; },
+    setHeader(k, v) { resp.headers[k] = v; return res; },
+    getHeader(k) { return resp.headers[k]; },
+    send(data) { resp.body = data; return res; },
+    end(data) { resp.body = data; return res; },
+    json(obj) { resp.body = JSON.stringify(obj); return res; },
+  };
+  return { req, res, getResp: () => resp };
 }
 
 const PRICE_HAIKU_45 = {
@@ -277,10 +300,18 @@ for (let idx = 0; idx < SCENARIOS.length; idx++) {
   const s = SCENARIOS[idx];
   process.stdout.write(`[${s.id}] ${s.label} ... `);
   const start = Date.now();
-  const req = makeRequest(s.body, idx);
-  const resp = await handler(req);
+  const { req, res, getResp } = makeRequest(s.body, idx);
+  await handler(req, res);
   const elapsed = Date.now() - start;
-  const parsed = await resp.json();
+  const resp = getResp();
+  let parsed;
+  try {
+    parsed = JSON.parse(resp.body);
+  } catch {
+    failures.push({ id: s.id, issues: ['response_not_json'] });
+    console.log('✗ parse failed');
+    continue;
+  }
 
   const stage = parsed._meta?.stage ?? 'unknown';
   const usage = parsed._meta?.usage;

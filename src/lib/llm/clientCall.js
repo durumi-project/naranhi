@@ -9,6 +9,8 @@
 //
 // 호출자(App.jsx)는 *항상 객체*를 받는다고 가정 — 예외 처리 부담 없음.
 
+import { FALLBACK_SUGGESTIONS } from './keywordSuggestion.js';
+
 const DEFAULT_TIMEOUT_MS = 12000;
 
 export const CLIENT_STAGE = {
@@ -107,6 +109,60 @@ export async function callClassify({ text, meta }, opts = {}) {
 
   if (parsed.confidence < 0.5 && !parsed.safety_signals.has_safety_flag) {
     parsed.ui_low_confidence_notice = true;
+  }
+  return parsed;
+}
+
+/**
+ * 백엔드 /api/suggestKeywords 호출 — 학생 입력 직후 후보 키워드 12~16개 생성.
+ *
+ * 세션 21 (W2-B). 실패 시 *FALLBACK_SUGGESTIONS* 로 폴백한 응답 객체가 반환되므로
+ * 호출자는 항상 `suggestions` 키를 가진 객체를 받을 수 있다 (예외 throw 안 함).
+ *
+ * @param {{ text: string, meta?: object }} args
+ * @param {{ timeoutMs?: number, fetchImpl?: typeof fetch, endpoint?: string }} [opts]
+ * @returns {Promise<{ suggestions: Array<{key: string, label: string, category: string}>, _meta?: object, _fallback_meta?: object }>}
+ */
+export async function callSuggestKeywords({ text, meta }, opts = {}) {
+  const timeoutMs = opts.timeoutMs ?? 8000;
+  const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
+  const endpoint = opts.endpoint ?? '/api/suggestKeywords';
+
+  const fallback = (reason, extra = {}) => ({
+    suggestions: FALLBACK_SUGGESTIONS,
+    _client_meta: { stage: 'client_fallback', reason, ...extra },
+  });
+
+  if (!fetchImpl) return fallback('fetch_unavailable');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetchImpl(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text, meta: meta ?? {} }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    return fallback(err?.name === 'AbortError' ? 'timeout' : 'network_error', { message: err?.message ?? String(err) });
+  }
+  clearTimeout(timer);
+
+  if (!response.ok) return fallback(`http_${response.status}`);
+
+  let parsed;
+  try {
+    parsed = await response.json();
+  } catch {
+    return fallback('json_parse_failed');
+  }
+
+  if (!parsed || !Array.isArray(parsed.suggestions) || parsed.suggestions.length === 0) {
+    return fallback('empty_suggestions');
   }
   return parsed;
 }

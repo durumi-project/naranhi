@@ -20,7 +20,9 @@ import KEYWORD_RULES from './data/keyword_rules.json';
 
 // M2 LLM 통합 (세션 11) — /api/classify 호출 래퍼.
 // 로컬 classify 는 폴백용으로 유지 (네트워크·LLM 실패 시 즉시 동작).
-import { callClassify, expandMatchedCaseIds } from './lib/llm/clientCall.js';
+// 세션 21 (W2-B) — /api/suggestKeywords 호출 래퍼 추가.
+import { callClassify, callSuggestKeywords, expandMatchedCaseIds } from './lib/llm/clientCall.js';
+import { FALLBACK_SUGGESTIONS } from './lib/llm/keywordSuggestion.js';
 
 /* ============================================================================
    「나란히」 프로토타입 v2 — 데이터 구동 버전
@@ -301,8 +303,10 @@ function Header({ onHome, showBack, onBack }) {
 }
 
 function ProgressBar({ step, total }) {
+  // 세션 21 (W2-B): [이게 맞을까요?] 화면을 [몇 가지만 더 확인할게요]에 통합 → 사용자 흐름 6→5단계.
+  // step 인덱스는 0~5 그대로 유지하지만 진행 표시는 *1~4 의 4개 active step* 으로 보임.
   const pct = (step / total) * 100;
-  const labels = ['시작', '나에 대해', '사건 이야기', '확인 질문', '분석', '결과 안내'];
+  const labels = ['시작', '나에 대해', '사건 이야기', '확인·키워드', '분석', '결과 안내'];
   return (
     <div className="max-w-6xl mx-auto px-6 pt-6 pb-2">
       <div className="flex items-center justify-between mb-3">
@@ -529,124 +533,191 @@ function SafetyBranchScreen({ action, onReset }) {
   );
 }
 
-function StepConfirm({ classification, onConfirm, onUpdate, onBack }) {
+/* StepDetails — 세션 21 (W2-B) 통합 화면.
+ * 기존 두 화면([이게 맞을까요?] + [몇 가지만 더 확인할게요])을 하나로 합쳤다:
+ *   1) 분류 결과 인라인 확인·수정 (예전 StepConfirm)
+ *   2) LLM 동적 키워드 다중 선택 — /api/suggestKeywords 결과
+ *   3) 기존 QUESTION_TREES 기반 추가 확인 질문 (예전 StepFollowUp)
+ * 키워드 응답이 도착하기 전에는 폴백 키워드 chip 으로 미리 보여 *체감 대기시간 0*. */
+function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
   const TYPE_LABELS = { PH: '신체폭력', VB: '언어폭력', EX: '금품갈취', CO: '강요', OS: '따돌림', SX: '성폭력', CY: '사이버폭력', MX: '복합형' };
   const ROLE_LABELS = { G: '신고를 받은 쪽 (가해자로 지목됨)', V: '신고를 한 쪽 (피해를 입었음)', B: '쌍방', W: '목격자', P: '보호자', U: '아직 잘 모르겠음' };
-  const [editing, setEditing] = useState(false);
-  const [type, setType] = useState(classification.type_main);
-  const [role, setRole] = useState(classification.role);
-  const changed = type !== classification.type_main || role !== classification.role;
 
-  const apply = () => {
-    onUpdate({ type_main: type, role });
+  const [editing, setEditing] = useState(false);
+  const [editType, setEditType] = useState(data.classification.type_main);
+  const [editRole, setEditRole] = useState(data.classification.role);
+
+  useEffect(() => {
+    setEditType(data.classification.type_main);
+    setEditRole(data.classification.role);
+  }, [data.classification.type_main, data.classification.role]);
+
+  const editChanged = editType !== data.classification.type_main || editRole !== data.classification.role;
+  const applyEdit = () => {
+    onUpdate({ type_main: editType, role: editRole });
     setEditing(false);
   };
 
+  // 키워드 chip 다중 선택 토글
+  const selected = data.selected_keywords || [];
+  const toggleKeyword = (key) => {
+    const next = selected.includes(key)
+      ? selected.filter((k) => k !== key)
+      : [...selected, key];
+    onChange({ ...data, selected_keywords: next });
+  };
+
+  const suggestionsLoading = data.keyword_status === 'pending';
+  const suggestions = data.keyword_suggestions ?? FALLBACK_SUGGESTIONS;
+  // 카테고리별 색상 (감정·관계 등 학폭 외 카테고리도 노출됨을 시각적으로 분리)
+  const CAT_STYLE = {
+    행위: { bg: C.tagRed, fg: C.danger },
+    관계: { bg: C.tagBlue, fg: C.accent },
+    감정: { bg: C.cardWarm, fg: C.amberDeep },
+    상황: { bg: C.bgSoft, fg: C.inkSoft },
+    단계: { bg: C.tagYellow, fg: C.amberDeep },
+  };
+
+  const treeQuestionsAnswered =
+    !tree || tree.questions.length === 0 || tree.questions.every((q) => data.follow_up?.[q.id]);
+  const canProceed = treeQuestionsAnswered; // 키워드는 0개여도 진행 가능 (선택 사항)
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 anim-fade-up">
-      <div className="card-base p-7 mb-5" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
-        <div className="flex items-center gap-2 mb-3">
-          <AlertCircle size={18} color={C.amberDeep} />
-          <h2 className="font-bold text-lg" style={{ color: C.ink }}>이게 맞을까요?</h2>
-        </div>
-        <p className="text-sm mb-4" style={{ color: C.inkSoft }}>
-          적어주신 내용을 토대로 분류해봤어요. 신뢰도는 <strong>{Math.round(classification.confidence * 100)}%</strong>예요.
-          맞지 않으면 아래에서 직접 수정할 수 있어요.
-        </p>
+      <div className="mb-7">
+        <h2 className="font-display text-3xl font-bold mb-2" style={{ color: C.ink }}>몇 가지만 더 확인할게요</h2>
+        <p style={{ color: C.inkSoft }}>맞춤 안내를 위해 분류를 확인하고, 해당되는 키워드와 질문에 답해 주세요.</p>
+      </div>
 
+      {/* 1) 분류 결과 인라인 확인·수정 */}
+      <div className="card-base p-6 mb-5" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
+        <div className="flex items-center gap-2 mb-3">
+          <AlertCircle size={16} color={C.amberDeep} />
+          <h3 className="font-semibold" style={{ color: C.ink }}>분류 확인</h3>
+          <span className="chip text-[11px]" style={{ background: C.card, color: C.inkSoft, padding: '2px 8px' }}>
+            신뢰도 {Math.round(data.classification.confidence * 100)}%
+          </span>
+        </div>
         {!editing ? (
           <>
             <div className="grid grid-cols-2 gap-2 mb-3">
-              <div style={{ background: C.card, padding: 14, borderRadius: 12 }}>
+              <div style={{ background: C.card, padding: 12, borderRadius: 10 }}>
                 <div className="text-xs mb-1" style={{ color: C.inkMute }}>사건 유형</div>
-                <div className="font-bold" style={{ color: C.ink }}>{TYPE_LABELS[classification.type_main]}</div>
+                <div className="font-bold text-sm" style={{ color: C.ink }}>{TYPE_LABELS[data.classification.type_main]}</div>
               </div>
-              <div style={{ background: C.card, padding: 14, borderRadius: 12 }}>
-                <div className="text-xs mb-1" style={{ color: C.inkMute }}>너의 입장</div>
-                <div className="font-bold" style={{ color: C.ink }}>{ROLE_LABELS[classification.role]}</div>
+              <div style={{ background: C.card, padding: 12, borderRadius: 10 }}>
+                <div className="text-xs mb-1" style={{ color: C.inkMute }}>현재 입장</div>
+                <div className="font-bold text-sm" style={{ color: C.ink }}>{ROLE_LABELS[data.classification.role]}</div>
               </div>
             </div>
-            <button onClick={() => setEditing(true)} className="btn-ghost text-sm" style={{
-              width: '100%', justifyContent: 'center', padding: '10px 14px', background: C.card,
+            <button onClick={() => setEditing(true)} className="btn-ghost text-xs" style={{
+              width: '100%', justifyContent: 'center', padding: '8px 12px', background: C.card,
             }}>
-              <Code size={14} /> 분류가 맞지 않아요 · 직접 수정하기
+              <Code size={13} /> 분류가 맞지 않으면 직접 수정하기
             </button>
           </>
         ) : (
           <div className="anim-fade-in">
-            <div className="mb-4">
-              <label className="block text-xs font-semibold mb-2" style={{ color: C.inkMute }}>사건 유형을 선택해 주세요</label>
+            <div className="mb-3">
+              <label className="block text-xs font-semibold mb-2" style={{ color: C.inkMute }}>사건 유형</label>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                  <button key={k} onClick={() => setType(k)}
+                  <button key={k} onClick={() => setEditType(k)}
                     style={{
-                      padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-                      border: `1.5px solid ${type === k ? C.accent : C.line}`,
-                      background: type === k ? C.accent : C.card,
-                      color: type === k ? 'white' : C.ink,
-                      cursor: 'pointer', transition: 'all 0.15s',
+                      padding: '7px 11px', borderRadius: 9, fontSize: 12, fontWeight: 500,
+                      border: `1.5px solid ${editType === k ? C.accent : C.line}`,
+                      background: editType === k ? C.accent : C.card,
+                      color: editType === k ? 'white' : C.ink,
+                      cursor: 'pointer',
                     }}>{v}</button>
                 ))}
               </div>
             </div>
-            <div className="mb-2">
-              <label className="block text-xs font-semibold mb-2" style={{ color: C.inkMute }}>너의 입장을 선택해 주세요</label>
+            <div className="mb-3">
+              <label className="block text-xs font-semibold mb-2" style={{ color: C.inkMute }}>현재 입장</label>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(ROLE_LABELS).map(([k, v]) => (
-                  <button key={k} onClick={() => setRole(k)}
+                  <button key={k} onClick={() => setEditRole(k)}
                     style={{
-                      padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-                      border: `1.5px solid ${role === k ? C.accent : C.line}`,
-                      background: role === k ? C.accent : C.card,
-                      color: role === k ? 'white' : C.ink,
-                      cursor: 'pointer', transition: 'all 0.15s',
+                      padding: '7px 11px', borderRadius: 9, fontSize: 12, fontWeight: 500,
+                      border: `1.5px solid ${editRole === k ? C.accent : C.line}`,
+                      background: editRole === k ? C.accent : C.card,
+                      color: editRole === k ? 'white' : C.ink,
+                      cursor: 'pointer',
                     }}>{v}</button>
                 ))}
               </div>
             </div>
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => { setEditing(false); setType(classification.type_main); setRole(classification.role); }}
-                className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>취소</button>
-              <button onClick={apply} disabled={!changed}
-                className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>수정 적용</button>
+            <div className="flex gap-2">
+              <button onClick={() => { setEditing(false); setEditType(data.classification.type_main); setEditRole(data.classification.role); }}
+                className="btn-ghost text-xs" style={{ flex: 1, justifyContent: 'center', padding: 8 }}>취소</button>
+              <button onClick={applyEdit} disabled={!editChanged}
+                className="btn-primary text-xs" style={{ flex: 1, justifyContent: 'center', padding: 8, fontSize: 13 }}>수정 적용</button>
             </div>
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-2">
-        <button onClick={onConfirm} className="btn-primary justify-center">맞아요, 계속 진행할게요 <ChevronRight size={16} /></button>
-        <button onClick={onBack} className="btn-ghost justify-center">
-          <ChevronLeft size={15} /> 이전 단계로 (작성 내용 유지)
-        </button>
-      </div>
-    </div>
-  );
-}
 
-function StepFollowUp({ tree, data, onChange, onNext, onBack }) {
-  const canProceed = tree.questions.every(q => data.follow_up?.[q.id]);
-  return (
-    <div className="max-w-2xl mx-auto px-6 py-8 anim-fade-up">
-      <div className="mb-8">
-        <h2 className="font-display text-3xl font-bold mb-2" style={{ color: C.ink }}>몇 가지만 더 확인할게요</h2>
-        <p style={{ color: C.inkSoft }}>너의 상황에 맞는 안내를 드리기 위해 필요해요.</p>
+      {/* 2) LLM 동적 키워드 다중 선택 */}
+      <div className="card-base p-6 mb-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles size={16} color={C.accent} />
+          <h3 className="font-semibold" style={{ color: C.ink }}>해당되는 키워드를 골라 주세요</h3>
+          {suggestionsLoading && <Loader2 size={14} color={C.amberDeep} className="anim-spin" />}
+          {data.keyword_status === 'fallback' && (
+            <span className="chip text-[10px]" style={{ background: C.bg, color: C.amberDeep, padding: '2px 8px' }}>기본 키워드</span>
+          )}
+        </div>
+        <p className="text-sm mb-4" style={{ color: C.inkSoft }}>
+          여러 개 골라도 돼요. 해당이 없으면 그냥 건너뛰셔도 괜찮아요.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((s) => {
+            const active = selected.includes(s.key);
+            const cat = CAT_STYLE[s.category] || { bg: C.bg, fg: C.inkSoft };
+            return (
+              <button key={s.key} onClick={() => toggleKeyword(s.key)}
+                style={{
+                  padding: '7px 13px', borderRadius: 999, fontSize: 13, fontWeight: 500,
+                  border: `1.5px solid ${active ? C.accent : C.line}`,
+                  background: active ? C.accent : cat.bg,
+                  color: active ? 'white' : cat.fg,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                {active && <Check size={12} strokeWidth={3} />}
+                <span>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {selected.length > 0 && (
+          <p className="text-xs mt-3" style={{ color: C.inkMute }}>
+            선택한 키워드 {selected.length}개 — 분석 단계에 함께 전달돼요.
+          </p>
+        )}
       </div>
-      <div className="space-y-4 mb-8">
-        {tree.questions.map((q, qi) => (
-          <div key={q.id} className="card-base p-6 anim-fade-up" style={{ animationDelay: `${qi * 0.05}s` }}>
-            <div className="flex items-start gap-3 mb-4">
-              <div style={{ width: 26, height: 26, borderRadius: 999, background: C.accent, color: 'white', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>{qi + 1}</div>
-              <h3 className="font-semibold text-base pt-0.5" style={{ color: C.ink }}>{q.text}</h3>
+
+      {/* 3) 기존 트리 기반 확인 질문 */}
+      {tree && tree.questions.length > 0 && (
+        <div className="space-y-3 mb-7">
+          {tree.questions.map((q, qi) => (
+            <div key={q.id} className="card-base p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <div style={{ width: 24, height: 24, borderRadius: 999, background: C.accent, color: 'white', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{qi + 1}</div>
+                <h4 className="font-semibold text-sm pt-0.5" style={{ color: C.ink }}>{q.text}</h4>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {q.options.map(o => (
+                  <button key={o} onClick={() => onChange({ ...data, follow_up: { ...(data.follow_up || {}), [q.id]: o } })}
+                    className={`pill-toggle ${data.follow_up?.[q.id] === o ? 'active' : ''}`} style={{ fontSize: 13, padding: '10px 14px' }}>{o}</button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {q.options.map(o => (
-                <button key={o} onClick={() => onChange({ ...data, follow_up: { ...(data.follow_up || {}), [q.id]: o } })}
-                  className={`pill-toggle ${data.follow_up?.[q.id] === o ? 'active' : ''}`} style={{ fontSize: 14 }}>{o}</button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex justify-between">
         <button onClick={onBack} className="btn-ghost"><ChevronLeft size={16} /> 이전</button>
         <button onClick={onNext} disabled={!canProceed} className="btn-primary">분석 시작하기 <Sparkles size={16} /></button>
@@ -1317,30 +1388,63 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
 }
 
 /* ============================================================================
-   MAIN APP — 6단계 상태 머신
+   MAIN APP — 세션 21 (W2-B): 사용자 흐름 6→5 단계 단순화
+   --------------------------------------------------------------------------
+   변경 전: Landing → Info → Situation → [Confirm overlay] → FollowUp → Loading → Results
+   변경 후: Landing → Info → Situation → Details(통합) → Loading → Results
+   [Confirm overlay] 가 Details 에 인라인 통합되고, Details 에서 LLM 키워드 동적 선택까지 수행.
    ============================================================================ */
+const EMPTY_DATA = {
+  gender: '', age_band: '', user_text: '',
+  classification: null, full_code: '', school_level: '',
+  follow_up: {}, stage: 0,
+  llm: null,
+  // W2-B 추가 — 키워드 동적 제안
+  keyword_suggestions: null,     // LLM 응답 도착 시 배열로 채움. 미도착 시 null → 폴백 chip 표시.
+  keyword_status: null,          // 'pending' | 'ok' | 'fallback' | null
+  selected_keywords: [],         // 사용자가 chip 으로 다중 선택한 key 배열
+};
+
 export default function App() {
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({
-    gender: '', age_band: '', user_text: '',
-    classification: null, full_code: '', school_level: '',
-    follow_up: {}, stage: 0,
-    llm: null,
-  });
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [data, setData] = useState(EMPTY_DATA);
   const [safetyAction, setSafetyAction] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState(null);
 
   const reset = () => {
-    setData({ gender: '', age_band: '', user_text: '', classification: null, full_code: '', school_level: '', follow_up: {}, stage: 0, llm: null });
-    setShowConfirm(false);
+    setData(EMPTY_DATA);
     setSafetyAction(null);
     setLoadingStatus(null);
     setStep(0);
   };
 
-  // M2 — step 4 (StepLoading) 진입 시 /api/classify 비동기 호출.
-  // 응답을 data.llm 에 저장하고 step 5 로 전환. safety_signals.has_safety_flag=true 면 SafetyBranch 우회.
+  // step 3 (StepDetails) 진입 시 /api/suggestKeywords 비동기 호출.
+  // 응답이 늦더라도 폴백 chip 이 이미 보이는 상태라 UX는 차단되지 않는다.
+  useEffect(() => {
+    if (step !== 3) return;
+    if (data.keyword_status === 'ok' || data.keyword_status === 'fallback') return; // 한 번만 호출
+    if (!data.user_text) return;
+    let aborted = false;
+    setData((d) => ({ ...d, keyword_status: 'pending' }));
+    (async () => {
+      const meta = {
+        role: data.classification?.role,
+        age: data.age_band,
+        school_level: data.school_level,
+      };
+      const result = await callSuggestKeywords({ text: data.user_text, meta });
+      if (aborted) return;
+      const isFallback = Boolean(result._fallback_meta || result._client_meta);
+      setData((d) => ({
+        ...d,
+        keyword_suggestions: result.suggestions,
+        keyword_status: isFallback ? 'fallback' : 'ok',
+      }));
+    })();
+    return () => { aborted = true; };
+  }, [step, data.user_text, data.keyword_status, data.classification?.role, data.age_band, data.school_level]);
+
+  // step 4 (StepLoading) 진입 시 /api/classify 호출. 선택 키워드를 meta 에 함께 전달.
   useEffect(() => {
     if (step !== 4) return;
     let aborted = false;
@@ -1350,6 +1454,11 @@ export default function App() {
         role: data.classification?.role,
         age: data.age_band,
         school_level: data.school_level,
+        // 선택한 키워드는 *키 + label* 둘 다 전달 — LLM이 의도 파악에 활용
+        selected_keywords: (data.selected_keywords ?? []).map((k) => {
+          const found = (data.keyword_suggestions ?? FALLBACK_SUGGESTIONS).find((s) => s.key === k);
+          return found ? { key: found.key, label: found.label, category: found.category } : { key: k };
+        }),
       };
       const result = await callClassify({ text: data.user_text, meta });
       if (aborted) return;
@@ -1364,15 +1473,15 @@ export default function App() {
       setStep(5);
     })();
     return () => { aborted = true; };
-  }, [step, data.user_text, data.classification?.role, data.age_band, data.school_level]);
+  }, [step, data.user_text, data.classification?.role, data.age_band, data.school_level, data.selected_keywords, data.keyword_suggestions]);
 
   const loadDemo = (persona) => {
     reset();
     setData(d => ({ ...d, gender: persona.gender, age_band: persona.age_band, user_text: persona.text }));
-    setStep(2); // Skip to situation, but data is prefilled. User clicks "분석 시작"
+    setStep(2); // Skip to situation, with data prefilled.
   };
 
-  // Step 2 → Classify
+  // Step 2 → Classify. 결과를 그대로 step 3 (Details) 로 흘려보낸다 — overlay 없음.
   const handleSituationNext = () => {
     const cls = classify(data.user_text);
     if (cls.is_safety_branch) {
@@ -1381,9 +1490,18 @@ export default function App() {
     }
     const levelInfo = inferSchoolLevel(data.age_band);
     const fullCode = `SV-${cls.type_main}-${cls.role}-${cls.stage_signal}-${levelInfo.school_level}`;
-    setData(d => ({ ...d, classification: cls, full_code: fullCode, school_level: levelInfo.school_level, stage: cls.stage_signal }));
-    // 항상 분류 확인 화면 노출 (사용자가 분류 수정할 수 있도록)
-    setShowConfirm(true);
+    setData(d => ({
+      ...d,
+      classification: cls,
+      full_code: fullCode,
+      school_level: levelInfo.school_level,
+      stage: cls.stage_signal,
+      // 새 텍스트로 진행할 때 이전 키워드 응답·선택은 무효화
+      keyword_suggestions: null,
+      keyword_status: null,
+      selected_keywords: [],
+    }));
+    setStep(3);
   };
 
   const tree = data.classification ? selectQuestionTree(data.classification.type_main, data.classification.role) : null;
@@ -1399,7 +1517,7 @@ export default function App() {
     );
   }
 
-  // 분류 결과 수정 핸들러 (StepConfirm + 결과 페이지에서 모두 사용)
+  // 분류 결과 수정 핸들러 (StepDetails 인라인 편집 + 결과 페이지 디버그 패널에서 모두 사용)
   const handleClassificationUpdate = ({ type_main, role }) => {
     const levelInfo = inferSchoolLevel(data.age_band);
     setData(d => {
@@ -1412,22 +1530,24 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.ink }}>
       <GlobalStyles />
-      <Header onHome={reset} showBack={step > 0 && step < 4 && !showConfirm} onBack={() => { setShowConfirm(false); setStep(s => Math.max(0, s - 1)); }} />
-      {step > 0 && step < 5 && !showConfirm && <ProgressBar step={step} total={5} />}
+      <Header onHome={reset} showBack={step > 0 && step < 4} onBack={() => setStep(s => Math.max(0, s - 1))} />
+      {/* 진행바: step 1~4 에서만 노출. total=4 — 4개 active 단계 (Info / Situation / Details / Loading). */}
+      {step > 0 && step < 5 && <ProgressBar step={step} total={4} />}
 
       <main>
         {step === 0 && <Landing onStart={() => setStep(1)} onDemo={loadDemo} />}
         {step === 1 && <StepInfo data={data} onChange={setData} onNext={() => setStep(2)} onBack={() => setStep(0)} />}
-        {step === 2 && !showConfirm && <StepSituation data={data} onChange={setData} onNext={handleSituationNext} onBack={() => setStep(1)} />}
-        {showConfirm && data.classification && (
-          <StepConfirm
-            classification={data.classification}
-            onConfirm={() => { setShowConfirm(false); setStep(3); }}
+        {step === 2 && <StepSituation data={data} onChange={setData} onNext={handleSituationNext} onBack={() => setStep(1)} />}
+        {step === 3 && data.classification && (
+          <StepDetails
+            data={data}
+            tree={tree}
+            onChange={setData}
             onUpdate={handleClassificationUpdate}
-            onBack={() => { setShowConfirm(false); setStep(2); }}
+            onNext={() => setStep(4)}
+            onBack={() => setStep(2)}
           />
         )}
-        {step === 3 && tree && <StepFollowUp tree={tree} data={data} onChange={setData} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
         {step === 4 && <StepLoading status={loadingStatus} />}
         {step === 5 && <StepResults data={data} onReset={reset} onNewDemo={() => setStep(0)} onClassificationUpdate={handleClassificationUpdate} />}
       </main>
