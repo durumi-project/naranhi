@@ -16,6 +16,7 @@ import {
   buildKeywordSuggestionSystemBlocks,
   validateSuggestions,
   FALLBACK_SUGGESTIONS,
+  FALLBACK_STAGES,
 } from "../src/lib/llm/keywordSuggestion.js";
 import { checkAndConsume, buildRateLimitResponse } from "../src/lib/llm/rateLimit.js";
 
@@ -64,6 +65,7 @@ function extractJsonString(raw) {
 function buildFallbackResponse(reason) {
   return {
     suggestions: FALLBACK_SUGGESTIONS,
+    stages: FALLBACK_STAGES,
     _fallback_meta: { reason },
   };
 }
@@ -71,7 +73,9 @@ function buildFallbackResponse(reason) {
 async function callClaude(client, userContent) {
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 600,
+    // W5 — 응답 스키마에 stages(5~7) 가 추가되면서 600 토큰으로는 잘려서 parse_error 폴백 발생.
+    // 1100 토큰까지 늘려 suggestions(12~16) + stages(5~7) 모두 담길 여유 확보.
+    max_tokens: 1100,
     system: buildKeywordSuggestionSystemBlocks(),
     messages: [{ role: "user", content: userContent }],
   });
@@ -154,8 +158,13 @@ export default async function handler(req, res) {
 
   const usage = llmOut.usage ?? {};
   const cacheHit = (usage.cache_read_input_tokens ?? 0) > 0;
+  // W5 — stages 가 LLM 응답에 누락됐을 수도 있어 폴백으로 보정. 검증을 통과한 경우엔 그대로 전달.
+  const stages = Array.isArray(parsed.stages) && parsed.stages.length > 0
+    ? parsed.stages
+    : FALLBACK_STAGES;
   return sendJson(res, {
     suggestions: parsed.suggestions,
+    stages,
     _meta: {
       stage: "llm_ok",
       model: MODEL,

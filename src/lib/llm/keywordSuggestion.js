@@ -46,7 +46,38 @@ const RULES = `[키워드 생성 규칙]
    - 감정 (학생의 마음)
    - 상황 (장소·시기·매개체)
    - 단계 (절차 진행 시점)
-7. key 는 ASCII *snake_case* 영문 (예: "same_class_friend", "feel_scared"). label 은 한국어.`;
+7. key 는 ASCII *snake_case* 영문 (예: "same_class_friend", "feel_scared"). label 은 한국어.
+
+[단계 선택지 생성 규칙 (stages 필드)]
+세션 22 (W5): "지금 어느 단계까지 왔어요?" 질문의 옵션을 학생 입력에 따라 유연하게 생성.
+8. stages 는 *5~7개의 단일 선택 옵션*. 사용자가 자신의 현재 상황을 한 번에 고를 수 있게.
+9. *학폭 명확 입력*(신고·학폭위·처분 등 명시) → 학폭 전형 단계 중심:
+   - "학교에 알리기 전이에요"
+   - "학교 선생님에게 알렸어요"
+   - "학교에서 조사 중이에요"
+   - "학폭위 통보를 받았어요"
+   - "처분·조치가 결정됐어요"
+   - "처분 결과에 동의하지 않아요(재심·행정심판 고민)"
+10. *모호한 입력*(친구 관계·감정 중심) → 유연한 옵션 포함:
+    - "아직 모르겠어요"
+    - "그냥 도움이 필요해요"
+    - "친구·가족과 먼저 이야기해 보고 싶어요"
+    - "학교에 알리기 전이에요"
+    같은 비공식 진입로도 함께 포함.
+11. *화해·관계회복* 경로도 포함 가능:
+    - "화해·관계회복을 진행 중이에요"
+    - "학교장 자체해결로 마무리됐어요"
+12. label 은 *완성된 문장형 1~2어절~10어절 이내*로 자연스럽게 ("학교에 알리기 전이에요").
+13. stage_value 는 0~9 사이 정수. 학폭 처리 절차 5단계와 매핑:
+    - 0: 사전·미인지 / "아직 모르겠어요", "도움이 필요해요"
+    - 1~2: 학교 신고·조사 / "선생님에게 알렸어요", "학교에서 조사 중이에요"
+    - 3: 자체해결 검토 / "학교장 자체해결 검토 중이에요", "화해 진행 중이에요"
+    - 4~6: 심의위 진행 / "학폭위 통보 받았어요", "심의 직전이에요"
+    - 7: 처분 결정 / "처분이 결정됐어요"
+    - 8~9: 불복·형사민사 / "결과에 동의하지 않아요", "재심·행정심판을 고민 중이에요"
+14. key 는 ASCII snake_case ("not_reported_yet", "school_investigating" 등).
+15. 같은 stage_value 를 가진 옵션이 2개 이상 가능 (의미가 다르면). 단, *동일 의미 옵션 중복은 금지*.
+16. 위험 키워드 라벨 금지 — 규칙 5와 동일하게 자해·자살·가정폭력·성폭력 직접 표현은 stages 에도 노출 안 함.`;
 
 const RESPONSE_SCHEMA = `[응답 — JSON 한 객체만, 자유 텍스트 일체 금지]
 
@@ -54,12 +85,15 @@ const RESPONSE_SCHEMA = `[응답 — JSON 한 객체만, 자유 텍스트 일체
 {
   "suggestions": [
     { "key": "string", "label": "string", "category": "행위" | "관계" | "감정" | "상황" | "단계" }
+  ],
+  "stages": [
+    { "key": "string", "label": "string", "stage_value": 0 }
   ]
 }
 
 규칙:
-- suggestions 길이는 *12 이상 16 이하*.
-- 카테고리 분포: 한 카테고리에 6개 초과 금지 (다양성 보장).
+- suggestions 길이는 *12 이상 16 이하*. 카테고리 한 카테고리에 6개 초과 금지.
+- stages 길이는 *5 이상 7 이하*. stage_value 는 0~9 정수. *서로 의미가 분명히 다른 옵션*만.
 - 위험 키워드 직접 노출 금지 (위 규칙 5).
 - JSON 외 텍스트 금지. 코드 블록 금지.`;
 
@@ -78,6 +112,8 @@ export function buildKeywordSuggestionSystemBlocks() {
 export const KEYWORD_CATEGORIES = ['행위', '관계', '감정', '상황', '단계'];
 export const MIN_SUGGESTIONS = 12;
 export const MAX_SUGGESTIONS = 16;
+export const MIN_STAGES = 5;
+export const MAX_STAGES = 7;
 
 // 응답 유효성 — schema 위반 시 fallback 으로 분기하도록 ok:false 반환.
 export function validateSuggestions(parsed) {
@@ -102,8 +138,42 @@ export function validateSuggestions(parsed) {
       return { ok: false, reason: `bad_category:${s.category}` };
     }
   }
+  // W5 — stages 검증. 누락 시 *경고만* 하고 통과 (suggestions 만 있어도 운영 가능).
+  if (parsed.stages !== undefined) {
+    if (!Array.isArray(parsed.stages)) return { ok: false, reason: 'stages_not_array' };
+    const stages = parsed.stages;
+    if (stages.length < MIN_STAGES || stages.length > MAX_STAGES) {
+      return { ok: false, reason: `stages_count:${stages.length}` };
+    }
+    const seenStageKeys = new Set();
+    for (const st of stages) {
+      if (!st || typeof st !== 'object') return { ok: false, reason: 'stage_item_not_object' };
+      if (typeof st.key !== 'string' || !/^[a-z][a-z0-9_]*$/.test(st.key)) {
+        return { ok: false, reason: `bad_stage_key:${st.key}` };
+      }
+      if (seenStageKeys.has(st.key)) return { ok: false, reason: `dup_stage_key:${st.key}` };
+      seenStageKeys.add(st.key);
+      if (typeof st.label !== 'string' || st.label.length === 0 || st.label.length > 40) {
+        return { ok: false, reason: `bad_stage_label:${st.label}` };
+      }
+      if (!Number.isInteger(st.stage_value) || st.stage_value < 0 || st.stage_value > 9) {
+        return { ok: false, reason: `bad_stage_value:${st.stage_value}` };
+      }
+    }
+  }
   return { ok: true };
 }
+
+// W5 — 폴백 단계 옵션. LLM 호출 실패·rate limit·미도착 상태에서 사용.
+// 기존 QUESTION_TREES 의 4개 학폭 전형 옵션보다 *조금 더 유연한* 6개 (학폭 명확/모호 양쪽 케이스 커버).
+export const FALLBACK_STAGES = [
+  { key: 'not_known_yet',         label: '아직 모르겠어요 (도움이 필요해요)',      stage_value: 0 },
+  { key: 'before_school_report',  label: '학교에 알리기 전이에요',                 stage_value: 0 },
+  { key: 'told_teacher',          label: '학교 선생님에게 알렸어요',               stage_value: 1 },
+  { key: 'school_investigating',  label: '학교에서 사실 확인 조사 중이에요',       stage_value: 2 },
+  { key: 'committee_notified',    label: '학폭위 통보를 받았어요',                 stage_value: 4 },
+  { key: 'disposition_decided',   label: '처분·조치가 결정됐어요',                  stage_value: 7 },
+];
 
 // 폴백 키워드 — LLM 호출 실패·rate limit 등에서 사용.
 // 입력과 무관하게 *카테고리 다양성*만 우선 보장.

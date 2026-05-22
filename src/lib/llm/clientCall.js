@@ -9,7 +9,7 @@
 //
 // 호출자(App.jsx)는 *항상 객체*를 받는다고 가정 — 예외 처리 부담 없음.
 
-import { FALLBACK_SUGGESTIONS } from './keywordSuggestion.js';
+import { FALLBACK_SUGGESTIONS, FALLBACK_STAGES } from './keywordSuggestion.js';
 
 const DEFAULT_TIMEOUT_MS = 12000;
 
@@ -130,6 +130,7 @@ export async function callSuggestKeywords({ text, meta }, opts = {}) {
 
   const fallback = (reason, extra = {}) => ({
     suggestions: FALLBACK_SUGGESTIONS,
+    stages: FALLBACK_STAGES,
     _client_meta: { stage: 'client_fallback', reason, ...extra },
   });
 
@@ -163,6 +164,10 @@ export async function callSuggestKeywords({ text, meta }, opts = {}) {
 
   if (!parsed || !Array.isArray(parsed.suggestions) || parsed.suggestions.length === 0) {
     return fallback('empty_suggestions');
+  }
+  // W5 — 서버가 stages 누락한 경우에도 클라이언트에서 폴백 보정.
+  if (!Array.isArray(parsed.stages) || parsed.stages.length === 0) {
+    parsed.stages = FALLBACK_STAGES;
   }
   return parsed;
 }

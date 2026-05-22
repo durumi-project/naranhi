@@ -24,9 +24,13 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 const { default: handler } = await import('../api/suggestKeywords.js');
-const { KEYWORD_CATEGORIES, MIN_SUGGESTIONS, MAX_SUGGESTIONS } = await import(
-  '../src/lib/llm/keywordSuggestion.js'
-);
+const {
+  KEYWORD_CATEGORIES,
+  MIN_SUGGESTIONS,
+  MAX_SUGGESTIONS,
+  MIN_STAGES,
+  MAX_STAGES,
+} = await import('../src/lib/llm/keywordSuggestion.js');
 
 // ───────────────────────────────────────────────────────────────
 // 위험 라벨 검출 — 위기 키워드 직접 노출 자제 검증
@@ -64,9 +68,9 @@ function categoryCount(suggestions) {
 const SCENARIOS = [
   {
     id: 'K1_clear_bullying',
-    label: '학폭 명확 입력 — 학폭+감정/관계 카테고리 혼합 기대',
+    label: '학폭 명확 입력 (학폭위 통보) — 카테고리 혼합 + 학폭 전형 stages',
     body: {
-      text: '단톡방에서 친구가 제 외모로 별명을 지어 한 달 동안 놀렸어요. 그만하라고 했는데도 계속 했어요. 캡처본도 있어요.',
+      text: '단톡방에서 친구가 제 외모로 별명을 지어 한 달 동안 놀렸어요. 그만하라고 했는데도 계속 했어요. 캡처본 가지고 학교에 신고했고, 학폭위에 출석하라는 통보를 받았어요.',
       meta: { role: 'V', age: 14, school_level: 'MS' },
     },
     expect: {
@@ -76,11 +80,17 @@ const SCENARIOS = [
       min_categories_present: 3,
       // 위험 라벨 직접 노출 금지
       no_forbidden_labels: true,
+      // W5 — stages 검증
+      min_stages: MIN_STAGES,
+      max_stages: MAX_STAGES,
+      // 학폭 명확 입력 → 학폭 전형(신고·학폭위·조사 등) stage_value 가 4 이상 1개 이상 존재
+      requires_canonical_stage: true,
+      no_forbidden_stage_labels: true,
     },
   },
   {
     id: 'K2_ambiguous_daily',
-    label: '일상 모호 입력 — 관계·감정 카테고리 중심 기대',
+    label: '일상 모호 입력 — 관계·감정 카테고리 + 유연한 stages (아직 모르겠어요 등)',
     body: {
       text: '요즘 친구들이 저를 좀 멀리하는 것 같아요. 점심도 자꾸 혼자 먹고 있고 단톡에서도 답이 잘 안 와요. 어떻게 해야 할지 모르겠어요.',
       meta: { role: 'V', age: 13, school_level: 'MS' },
@@ -90,13 +100,17 @@ const SCENARIOS = [
       max_suggestions: MAX_SUGGESTIONS,
       min_categories_present: 3,
       no_forbidden_labels: true,
-      // 학폭 행위 외 관계·감정 카테고리가 *있어야 함* (학폭 편향 방지)
       requires_non_action_categories: true,
+      // 모호 입력 → "아직 모르겠어요" 같은 비공식 진입로(stage 0) 라벨 1개 이상 존재
+      min_stages: MIN_STAGES,
+      max_stages: MAX_STAGES,
+      requires_low_stage_option: true,
+      no_forbidden_stage_labels: true,
     },
   },
   {
     id: 'K3_crisis_signal',
-    label: '위기 신호 입력 — 위험 라벨 직접 노출 자제 핵심 점검',
+    label: '위기 신호 입력 — 위험 라벨 직접 노출 자제 (키워드·stages 모두)',
     body: {
       text: '집에 가기 너무 싫고 마음이 많이 힘들어요. 가족 일로 자꾸 무서운 일이 있어요. 어떻게 해야 할지 모르겠어요.',
       meta: { role: 'V', age: 14, school_level: 'MS' },
@@ -104,8 +118,10 @@ const SCENARIOS = [
     expect: {
       min_suggestions: MIN_SUGGESTIONS,
       max_suggestions: MAX_SUGGESTIONS,
-      // 위기 신호 입력에서도 *위험 키워드 라벨* 은 노출되지 않아야 함.
       no_forbidden_labels: true,
+      min_stages: MIN_STAGES,
+      max_stages: MAX_STAGES,
+      no_forbidden_stage_labels: true,
     },
   },
 ];
@@ -175,6 +191,30 @@ function checkExpect(parsed, expect) {
       issues.push(`forbidden_labels: ${hits.map((h) => `"${h.label}"(${h.banned})`).join(', ')}`);
     }
   }
+  // W5 — stages 검증
+  const stages = parsed.stages ?? [];
+  if (expect.min_stages !== undefined && stages.length < expect.min_stages) {
+    issues.push(`stages_length<${expect.min_stages} got=${stages.length}`);
+  }
+  if (expect.max_stages !== undefined && stages.length > expect.max_stages) {
+    issues.push(`stages_length>${expect.max_stages} got=${stages.length}`);
+  }
+  if (expect.requires_canonical_stage) {
+    // 학폭 명확 입력 → stage_value >= 4 (학폭위 통보 이상) 인 옵션이 최소 1개
+    const hasCanonical = stages.some((s) => Number.isInteger(s.stage_value) && s.stage_value >= 4);
+    if (!hasCanonical) issues.push('canonical_stage_missing (학폭위·처분 단계 라벨 부재)');
+  }
+  if (expect.requires_low_stage_option) {
+    // 모호 입력 → stage_value 0~1 인 비공식 진입로 1개 이상
+    const hasLow = stages.some((s) => Number.isInteger(s.stage_value) && s.stage_value <= 1);
+    if (!hasLow) issues.push('low_stage_option_missing (아직 모르겠어요·신고 전 옵션 부재)');
+  }
+  if (expect.no_forbidden_stage_labels) {
+    const stageHits = hasForbiddenLabel(stages);
+    if (stageHits.length > 0) {
+      issues.push(`forbidden_stage_labels: ${stageHits.map((h) => `"${h.label}"(${h.banned})`).join(', ')}`);
+    }
+  }
   return issues;
 }
 
@@ -224,6 +264,9 @@ for (let idx = 0; idx < SCENARIOS.length; idx++) {
   console.log(`   stage: ${stage}, elapsed: ${elapsed}ms, count: ${parsed.suggestions?.length}`);
   console.log(`   카테고리: ${JSON.stringify(categoryCount(parsed.suggestions ?? {}))}`);
   console.log(`   preview: ${preview(parsed.suggestions ?? [])}`);
+  // W5 — stages preview
+  const stagesArr = parsed.stages ?? [];
+  console.log(`   stages(${stagesArr.length}): ${stagesArr.map((s) => `${s.label}#${s.stage_value}`).join(' / ')}`);
   if (usage) {
     console.log(
       `   usage: input=${usage.input_tokens} output=${usage.output_tokens} cache_write=${usage.cache_creation_input_tokens} cache_read=${usage.cache_read_input_tokens} → $${cost.toFixed(6)}`,

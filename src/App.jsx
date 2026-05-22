@@ -24,7 +24,7 @@ import COUNSELING_RESOURCES from './data/counseling_resources.json';
 // 로컬 classify 는 폴백용으로 유지 (네트워크·LLM 실패 시 즉시 동작).
 // 세션 21 (W2-B) — /api/suggestKeywords 호출 래퍼 추가.
 import { callClassify, callSuggestKeywords, expandMatchedCaseIds } from './lib/llm/clientCall.js';
-import { FALLBACK_SUGGESTIONS } from './lib/llm/keywordSuggestion.js';
+import { FALLBACK_SUGGESTIONS, FALLBACK_STAGES } from './lib/llm/keywordSuggestion.js';
 
 /* ============================================================================
    「나란히」 프로토타입 v2 — 데이터 구동 버전
@@ -393,6 +393,21 @@ const C = {
 /* ============================================================================
    DEMO PERSONAS — 4순위 핵심 검증 도구
    ============================================================================ */
+
+/* W5-1 — 데모 카드 친화 제목 자동 추출.
+ *  - "15세 단톡방 외모 비하, 학폭위 통보" → "단톡방 외모 비하"
+ *  - summary 의 첫 콤마 앞 절을 가져오고, 앞부분 "NN세 " 접두를 떼는 식.
+ *  - 12자 넘어가면 줄임표.
+ *  - summary 가 비어있으면 label 폴백. */
+function derivePersonaTitle(p) {
+  const raw = (p.summary ?? p.label ?? '').toString().trim();
+  if (!raw) return '데모';
+  const firstClause = raw.split(/[,，]/, 1)[0].trim();
+  const stripped = firstClause.replace(/^(만\s*)?\d+\s*세\s+/, '').trim();
+  const out = stripped.length > 0 ? stripped : firstClause;
+  return out.length > 12 ? `${out.slice(0, 12)}…` : out;
+}
+
 const DEMO_PERSONAS = [
   {
     id: 'P-001', emoji: '📱', label: '사이버 가해자',
@@ -472,7 +487,7 @@ function Header({ onHome, showBack, onBack }) {
           </div>
           <div className="flex flex-col items-start leading-tight">
             <span className="font-display text-lg font-bold" style={{ color: C.ink }}>나란히</span>
-            <span className="text-[11px]" style={{ color: C.inkMute }}>v2 · 데이터 구동</span>
+            <span className="text-[11px]" style={{ color: C.inkMute }}>ver.3</span>
           </div>
         </button>
         <div className="flex items-center gap-2">
@@ -510,7 +525,7 @@ function Landing({ onStart, onDemo }) {
         <div className="md:col-span-7 anim-fade-up">
           <div className="flex flex-wrap items-center gap-2 mb-6">
             <div className="chip" style={{ background: C.tagYellow, color: C.amberDeep }}>
-              <Sparkles size={14} /> v2 · 데이터 구동 프로토타입
+              <Sparkles size={14} /> ver.3
             </div>
             <div className="chip" style={{ background: C.card, color: C.inkSoft, border: `1px solid ${C.lineSoft}` }}>
               14세 이상 학생을 위한 도구
@@ -529,36 +544,35 @@ function Landing({ onStart, onDemo }) {
           </div>
         </div>
         <div className="md:col-span-5 anim-fade-up" style={{ animationDelay: '0.1s' }}>
+          {/* W5-4 — 기존 "데이터 구동 검증" 헤더·문구 박스 제거. 데모 카드만 유지.
+              W5-1 — 데모 카드 제목을 코드명(P-001 등) 대신 summary 기반 친화 제목으로. */}
           <div style={{ background: C.cardWarm, border: `1.5px solid ${C.line}`, borderRadius: 28, padding: 24, boxShadow: `0 30px 60px -30px ${C.amber}55` }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Database size={16} color={C.amberDeep} />
-              <span className="text-xs font-bold" style={{ color: C.amberDeep }}>데이터 구동 검증</span>
-            </div>
-            <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkSoft }}>
-              <strong style={{ color: C.ink }}>같은 앱 코드</strong>가 입력에 따라 <strong style={{ color: C.ink }}>다른 결과</strong>를 만들어내요.
-              아래 데모로 확인해보세요.
-            </p>
             <div className="space-y-2">
-              {DEMO_PERSONAS.map(p => (
-                <button key={p.id} onClick={() => onDemo(p)} style={{
-                  width: '100%', textAlign: 'left', padding: 12,
-                  background: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 12,
-                  cursor: 'pointer', transition: 'all 0.15s',
-                  display: 'flex', alignItems: 'center', gap: 12,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = C.amber; e.currentTarget.style.transform = 'translateX(2px)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.lineSoft; e.currentTarget.style.transform = ''; }}>
-                  <span style={{ fontSize: 22 }}>{p.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm" style={{ color: C.ink }}>{p.id}</span>
-                      <span className="text-xs" style={{ color: C.inkMute }}>{p.label}</span>
+              {DEMO_PERSONAS.map(p => {
+                const title = derivePersonaTitle(p);
+                return (
+                  <button key={p.id} onClick={() => onDemo(p)} style={{
+                    width: '100%', textAlign: 'left', padding: 12,
+                    background: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 12,
+                    cursor: 'pointer', transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.amber; e.currentTarget.style.transform = 'translateX(2px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.lineSoft; e.currentTarget.style.transform = ''; }}>
+                    <span style={{ fontSize: 22 }}>{p.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm" style={{ color: C.ink }}>{title}</span>
+                        <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
+                          {p.age_band}
+                        </span>
+                      </div>
+                      <div className="text-xs truncate" style={{ color: C.inkSoft }}>{p.label}</div>
                     </div>
-                    <div className="text-xs truncate" style={{ color: C.inkSoft }}>{p.summary}</div>
-                  </div>
-                  <PlayCircle size={18} color={C.accent} />
-                </button>
-              ))}
+                    <PlayCircle size={18} color={C.accent} />
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1031,23 +1045,39 @@ function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
         )}
       </div>
 
-      {/* 3) 기존 트리 기반 확인 질문 */}
+      {/* 3) 트리 기반 확인 질문.
+            W5 — "지금 어느 단계까지 왔어요?" 자리는 LLM 동적 stages 가 도착하면 그것을 옵션으로 사용.
+            미도착·실패 시에는 트리의 기본 옵션 그대로 표시. */}
       {tree && tree.questions.length > 0 && (
         <div className="space-y-3 mb-7">
-          {tree.questions.map((q, qi) => (
-            <div key={q.id} className="card-base p-5">
-              <div className="flex items-start gap-3 mb-3">
-                <div style={{ width: 24, height: 24, borderRadius: 999, background: C.accent, color: 'white', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{qi + 1}</div>
-                <h4 className="font-semibold text-sm pt-0.5" style={{ color: C.ink }}>{q.text}</h4>
+          {tree.questions.map((q, qi) => {
+            const isStageQuestion = /단계까지|어느\s*단계/.test(q.text);
+            const dynamicStages = isStageQuestion ? data.stages_suggestions : null;
+            // 옵션은 (1) 동적 stages 가 있으면 그것, (2) 없으면 트리의 q.options.
+            const optionList = dynamicStages
+              ? dynamicStages.map((s) => ({ key: s.key, label: s.label }))
+              : q.options.map((o) => ({ key: o, label: o }));
+            return (
+              <div key={q.id} className="card-base p-5">
+                <div className="flex items-start gap-3 mb-3">
+                  <div style={{ width: 24, height: 24, borderRadius: 999, background: C.accent, color: 'white', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{qi + 1}</div>
+                  <h4 className="font-semibold text-sm pt-0.5" style={{ color: C.ink }}>{q.text}</h4>
+                  {isStageQuestion && suggestionsLoading && !dynamicStages && (
+                    <Loader2 size={13} color={C.amberDeep} className="anim-spin" />
+                  )}
+                  {isStageQuestion && dynamicStages && data.keyword_status === 'fallback' && (
+                    <span className="chip text-[10px]" style={{ background: C.bg, color: C.amberDeep, padding: '2px 8px' }}>기본 옵션</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {optionList.map((o) => (
+                    <button key={o.key} onClick={() => onChange({ ...data, follow_up: { ...(data.follow_up || {}), [q.id]: o.label } })}
+                      className={`pill-toggle ${data.follow_up?.[q.id] === o.label ? 'active' : ''}`} style={{ fontSize: 13, padding: '10px 14px' }}>{o.label}</button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {q.options.map(o => (
-                  <button key={o} onClick={() => onChange({ ...data, follow_up: { ...(data.follow_up || {}), [q.id]: o } })}
-                    className={`pill-toggle ${data.follow_up?.[q.id] === o ? 'active' : ''}`} style={{ fontSize: 13, padding: '10px 14px' }}>{o}</button>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1625,7 +1655,7 @@ function ClassificationDebugPanel({ data, onUpdate }) {
             </div>
           </div>
           <p style={{ color: C.inkMute, lineHeight: 1.5 }}>
-            ※ v2 프로토타입은 키워드 룰 기반 분류예요. 5순위에서 LLM API로 교체하면 정확도가 올라갑니다.
+            ※ 폴백 분류는 키워드 룰 기반이에요. 실제 분류는 Claude API 가 처리하고, 실패 시에만 이 폴백으로 흘러요.
           </p>
         </div>
       )}
@@ -1866,7 +1896,7 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
       </div>
 
       <footer className="pt-8 text-center" style={{ borderTop: `1px solid ${C.lineSoft}` }}>
-        <div className="font-display text-base font-bold mb-2" style={{ color: C.ink }}>나란히 v2 · 데이터 구동 프로토타입</div>
+        <div className="font-display text-base font-bold mb-2" style={{ color: C.ink }}>나란히 ver.3</div>
         <p className="text-xs" style={{ color: C.inkMute }}>두루미팀 · 두루 공익법센터 협력 · 테크포임팩트 캠퍼스<br />
           판례 {CASES.length}건 · 서류 {DOCUMENTS.length}건 · 용어 {LEGAL_TERMS.length}건 · FAQ {FAQS.length}건 · 기관 {RESOURCES.length}건 · 상담 {COUNSELING_RESOURCES.length}곳
         </p>
@@ -1893,6 +1923,8 @@ const EMPTY_DATA = {
   keyword_suggestions: null,     // LLM 응답 도착 시 배열로 채움. 미도착 시 null → 폴백 chip 표시.
   keyword_status: null,          // 'pending' | 'ok' | 'fallback' | null
   selected_keywords: [],         // 사용자가 chip 으로 다중 선택한 key 배열
+  // W5 — 단계 질문(LLM 동적). 응답 도착 시 stages 배열. 미도착 시 null → 트리 기본 옵션 사용.
+  stages_suggestions: null,
 };
 
 export default function App() {
@@ -1928,6 +1960,10 @@ export default function App() {
       setData((d) => ({
         ...d,
         keyword_suggestions: result.suggestions,
+        // W5 — stages 가 응답에 있으면 함께 저장. 없으면 폴백.
+        stages_suggestions: Array.isArray(result.stages) && result.stages.length > 0
+          ? result.stages
+          : FALLBACK_STAGES,
         keyword_status: isFallback ? 'fallback' : 'ok',
       }));
     })();
@@ -1989,6 +2025,7 @@ export default function App() {
       // 새 텍스트로 진행할 때 이전 키워드 응답·선택은 무효화
       keyword_suggestions: null,
       keyword_status: null,
+      stages_suggestions: null,
       selected_keywords: [],
     }));
     setStep(3);
