@@ -394,20 +394,97 @@ function Landing({ onStart, onDemo }) {
           </div>
         ))}
       </div>
+
+      {/* W3 — 도와줄 어른과 기관의 존재 강조. 상세 정보(전화·홈페이지)는 결과 화면의 기관 카드(W4) 자리에서 다룸. */}
+      <section className="mt-14 anim-fade-up" style={{ animationDelay: '0.45s' }}>
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <Users size={20} color={C.accent} />
+          <h2 className="font-display text-2xl font-bold" style={{ color: C.ink }}>도와줄 어른과 기관이 있어요</h2>
+        </div>
+        <p className="text-sm leading-relaxed mb-5 max-w-3xl" style={{ color: C.inkSoft }}>
+          혼자 결정하지 않으셔도 됩니다. 학교 안, 가족, 학교 밖 전문 기관까지 함께 이야기할 수 있는 사람들이 있어요.
+        </p>
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            {
+              icon: <Scale size={18} />,
+              title: '학교 안',
+              who: '담임·상담 선생님',
+              desc: '학교에서 가장 먼저 도움을 청할 수 있어요. 보호자에게 알리기 전에 먼저 상담만 받아도 괜찮아요.',
+              tag: '가장 가까운 곳',
+            },
+            {
+              icon: <Heart size={18} />,
+              title: '가족',
+              who: '보호자·다른 어른',
+              desc: '부모님이 어렵다면 다른 가족 어른(이모·고모·형·누나)에게 먼저 이야기해도 돼요.',
+              tag: '믿을 수 있는 어른',
+            },
+            {
+              icon: <Phone size={18} />,
+              title: '청소년 상담',
+              who: '1388',
+              desc: '24시간 무료 익명. 학교폭력·또래 관계·가족 문제까지 가장 폭넓게 듣고 도와줘요.',
+              tag: '24시간 익명',
+            },
+            {
+              icon: <Shield size={18} />,
+              title: 'Wee 클래스·센터',
+              who: '학교·교육청 상담',
+              desc: '학교 안 Wee 클래스, 교육청 Wee 센터에서 전문 상담 선생님이 함께해요.',
+              tag: '전문 상담',
+            },
+          ].map((it, i) => (
+            <div key={i} className="card-base p-5 anim-fade-up" style={{
+              animationDelay: `${0.5 + i * 0.05}s`,
+              background: C.card, border: `1px solid ${C.lineSoft}`,
+            }}>
+              <div className="flex items-center gap-2 mb-3">
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: C.cardWarm, color: C.amberDeep, display: 'grid', placeItems: 'center' }}>
+                  {it.icon}
+                </div>
+                <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>{it.tag}</span>
+              </div>
+              <h3 className="font-semibold text-sm mb-0.5" style={{ color: C.ink }}>{it.title}</h3>
+              <div className="text-xs mb-2" style={{ color: C.amberDeep, fontWeight: 600 }}>{it.who}</div>
+              <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{it.desc}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs mt-4 leading-relaxed" style={{ color: C.inkMute }}>
+          분석을 시작하면 상황에 맞는 *구체 연락처와 운영 시간*도 함께 안내해 드려요.
+        </p>
+      </section>
     </div>
   );
 }
 
 function StepInfo({ data, onChange, onNext, onBack }) {
-  const canProceed = data.age_band;
+  // W3 — 입력 부담을 더 줄이기 위해 *모든 항목을 선택*으로. 나이를 비워도 진행 가능.
+  // 나이 미입력 시 school_level 이 'OT(기타)' 로 들어가지만 사례 매칭은 그대로 동작.
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 anim-fade-up">
-      <div className="mb-8">
+      <div className="mb-7">
         <h2 className="font-display text-3xl font-bold mb-2" style={{ color: C.ink }}>나에 대해 알려주세요</h2>
-        <p style={{ color: C.inkSoft }}>나이는 받을 수 있는 처분이 달라지기 때문에 꼭 필요해요.</p>
+        <p style={{ color: C.inkSoft }}>채워주시면 안내가 더 정확해지지만, 비워두셔도 괜찮아요.</p>
       </div>
-      <div className="card-base p-7 mb-5">
-        <label className="block text-sm font-semibold mb-3" style={{ color: C.ink }}>성별 <span style={{ color: C.inkMute, fontWeight: 400 }}>· 선택사항</span></label>
+
+      {/* W3 — 심리 안전 문구. 화면 상단에서 부담을 먼저 풀어준다. */}
+      <div style={{
+        background: C.cardWarm, border: `1px solid ${C.line}`, borderRadius: 14,
+        padding: 16, marginBottom: 20, display: 'flex', gap: 12,
+      }}>
+        <Shield size={18} color={C.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+        <div className="text-sm leading-relaxed" style={{ color: C.inkSoft }}>
+          <strong style={{ color: C.ink }}>혼자 결정하지 않으셔도 됩니다.</strong> 담임 선생님, 상담 선생님,
+          보호자, 1388(청소년 상담) 같은 어른과 기관이 함께해요. 이 안내는 그 자리를 찾는 데 도움드리는 정도예요.
+        </div>
+      </div>
+
+      <div className="card-base p-7 mb-4">
+        <label className="block text-sm font-semibold mb-3" style={{ color: C.ink }}>
+          성별 <span style={{ color: C.inkMute, fontWeight: 400 }}>· 선택</span>
+        </label>
         <div className="flex flex-wrap gap-2">
           {['남자', '여자', '말하고 싶지 않아요'].map(g => (
             <button key={g} onClick={() => onChange({ ...data, gender: g })} className={`pill-toggle ${data.gender === g ? 'active' : ''}`}>{g}</button>
@@ -415,32 +492,79 @@ function StepInfo({ data, onChange, onNext, onBack }) {
         </div>
       </div>
       <div className="card-base p-7 mb-5">
-        <label className="block text-sm font-semibold mb-3" style={{ color: C.ink }}>나이 <span style={{ color: C.danger, fontWeight: 400 }}>· 필수</span></label>
+        <label className="block text-sm font-semibold mb-3" style={{ color: C.ink }}>
+          나이 <span style={{ color: C.inkMute, fontWeight: 400 }}>· 선택 (받을 수 있는 안내가 더 정확해져요)</span>
+        </label>
         <div className="grid grid-cols-3 gap-2">
           {['14-15세', '16-17세', '18세 이상'].map(a => (
             <button key={a} onClick={() => onChange({ ...data, age_band: a })} className={`pill-toggle ${data.age_band === a ? 'active' : ''}`}>{a}</button>
           ))}
         </div>
-        <p className="text-xs mt-3" style={{ color: C.inkMute }}>
-          14세 미만이라면 보호자와 함께 사단법인 두루(공익법센터)에 직접 문의해 주세요.
+        <p className="text-xs mt-3 leading-relaxed" style={{ color: C.inkMute }}>
+          14세 미만이라면 보호자와 함께 사단법인 두루(공익법센터)에 직접 문의해 보시기를 권해 드려요. 14세 미만은 받을 수 있는 절차가 달라지기 때문이에요.
         </p>
       </div>
       <div className="flex justify-between">
         <button onClick={onBack} className="btn-ghost"><ChevronLeft size={16} /> 이전</button>
-        <button onClick={onNext} disabled={!canProceed} className="btn-primary">다음으로 <ChevronRight size={16} /></button>
+        <button onClick={onNext} className="btn-primary">다음으로 <ChevronRight size={16} /></button>
       </div>
     </div>
   );
 }
 
+// W3 — 카테고리별 진입 예시. 회의 결과 *사용자 실제 사례가 예시와 다르면 입력 어려움*을 풀기 위해
+// 명확/모호/관계감정/보호자/가해자 5각 카테고리를 모두 커버한다. 클릭 시 textarea 자동 입력.
+const SITUATION_EXAMPLES = [
+  {
+    id: 'cyber_clear',
+    category: '명확한 학폭',
+    title: '단톡방 욕설·놀림',
+    text: '단톡방에서 같은 반 친구들이 저를 별명으로 부르면서 외모로 자꾸 놀려요. 그만하라고 했는데도 한 달 넘게 계속됐어요. 캡처본은 가지고 있어요.',
+  },
+  {
+    id: 'sns_spread',
+    category: '명확한 학폭',
+    title: 'SNS에 사진 유포',
+    text: '제가 모르는 사이에 제 사진을 누가 SNS에 올려서 비웃었어요. 그 게시물이 다른 학교에까지 퍼지고 있어요. 어떻게 해야 할지 모르겠어요.',
+  },
+  {
+    id: 'ambiguous_physical',
+    category: '모호한 상황',
+    title: '신고됐는데 의도가 없었음',
+    text: '복도에서 친구와 어깨를 부딪쳤는데 일부러 그런 게 아니었어요. 그런데 그 친구가 학교에 신고했다고 들었어요. 학폭으로 보일 수 있는지 잘 모르겠어요.',
+  },
+  {
+    id: 'relational_exclusion',
+    category: '관계·감정',
+    title: '모둠에서 자꾸 빠짐',
+    text: '요즘 친구들이 자꾸 저만 빼고 모둠을 만들어요. 점심도 혼자 먹고 있고, 단톡에서도 답이 잘 안 와요. 학폭인지 단순 갈등인지 잘 모르겠어요.',
+  },
+  {
+    id: 'parent_view',
+    category: '보호자 시점',
+    title: '학교에서 연락받음',
+    text: '아이가 다른 친구에게 욕설을 했다며 학교에서 연락이 왔습니다. 앞으로 어떤 절차를 거치게 되는지, 보호자로서 무엇을 준비해야 할지 알려 주세요.',
+  },
+  {
+    id: 'gaehae_view',
+    category: '가해자 시점',
+    title: '지목됐는데 잘 모르겠음',
+    text: '학교에서 제가 친구를 괴롭혔다는 신고가 들어왔다고 하더라고요. 저는 장난이었다고 생각했는데, 그 친구는 그렇게 받아들이지 않은 것 같아요. 학폭위에 출석하라는 통보를 받았어요.',
+  },
+];
+
 function StepSituation({ data, onChange, onNext, onBack }) {
   const canProceed = data.user_text && data.user_text.trim().length >= 10;
-  const templates = [
-    '학교에서 반 친구와 어떤 일이 있었는데, 그 친구가 ___ ',
-    'SNS/카톡에서 ___와 ___한 일이 있었는데, 그 이후로 ___ ',
-    '집에서 ___와 ___한 일이 있었어요. 그래서 ___ ',
-    '___에서 ___한 일이 있어서 경찰에 신고됐어요. 그런데 ___ ',
-  ];
+
+  // 카테고리별 색상 — StepDetails 의 chip 컬러 톤과 동일 결을 유지.
+  const CAT_STYLE = {
+    '명확한 학폭': { bg: C.tagRed, fg: C.danger },
+    '모호한 상황': { bg: C.tagYellow, fg: C.amberDeep },
+    '관계·감정':   { bg: C.tagBlue, fg: C.accent },
+    '보호자 시점': { bg: C.cardWarm, fg: C.amberDeep },
+    '가해자 시점': { bg: C.bgSoft,  fg: C.inkSoft },
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 anim-fade-up">
       <div className="mb-8">
@@ -448,16 +572,43 @@ function StepSituation({ data, onChange, onNext, onBack }) {
         <p style={{ color: C.inkSoft }}>어려운 말 몰라도 괜찮아요. 평소에 이야기하듯 편하게 적어주세요.</p>
       </div>
       <div className="card-base p-7 mb-5">
-        <label className="block text-sm font-semibold mb-3" style={{ color: C.ink }}>막막하다면 예시 중 하나로 시작해보세요</label>
-        <div className="grid sm:grid-cols-2 gap-2 mb-4">
-          {templates.map((t, i) => (
-            <button key={i} onClick={() => onChange({ ...data, user_text: t })} style={{
-              textAlign: 'left', padding: '10px 14px', borderRadius: 12,
-              border: `1px solid ${C.lineSoft}`, background: C.bg, cursor: 'pointer', fontSize: 12,
-            }} onMouseEnter={e => e.currentTarget.style.background = C.cardWarm} onMouseLeave={e => e.currentTarget.style.background = C.bg}>
-              <div style={{ color: C.inkMute }}>{t}</div>
-            </button>
-          ))}
+        <div className="mb-1 flex items-center gap-2">
+          <Sparkles size={14} color={C.amberDeep} />
+          <label className="block text-sm font-semibold" style={{ color: C.ink }}>본인 상황에 가까운 예시를 골라 시작해 보세요</label>
+        </div>
+        <p className="text-xs mb-4" style={{ color: C.inkMute }}>
+          예시를 누르면 자동으로 채워져요. 마음에 드는 게 없으면 그냥 비워두고 직접 적어도 괜찮아요.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-2 mb-5">
+          {SITUATION_EXAMPLES.map((ex) => {
+            const cat = CAT_STYLE[ex.category] || { bg: C.bg, fg: C.inkSoft };
+            const active = data.user_text === ex.text;
+            return (
+              <button key={ex.id} onClick={() => onChange({ ...data, user_text: ex.text })}
+                style={{
+                  textAlign: 'left', padding: '12px 14px', borderRadius: 12,
+                  border: `1.5px solid ${active ? C.accent : C.lineSoft}`,
+                  background: active ? C.cardWarm : C.bg,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  display: 'flex', flexDirection: 'column', gap: 6,
+                }}
+                onMouseEnter={(e) => { if (!active) e.currentTarget.style.borderColor = C.amber; }}
+                onMouseLeave={(e) => { if (!active) e.currentTarget.style.borderColor = C.lineSoft; }}>
+                <div className="flex items-center gap-2">
+                  <span className="chip" style={{ background: cat.bg, color: cat.fg, padding: '2px 8px', fontSize: 10.5, fontWeight: 600 }}>
+                    {ex.category}
+                  </span>
+                  <span className="text-xs font-semibold" style={{ color: C.ink }}>{ex.title}</span>
+                </div>
+                <div style={{
+                  color: C.inkMute, fontSize: 11.5, lineHeight: 1.5,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}>
+                  {ex.text}
+                </div>
+              </button>
+            );
+          })}
         </div>
         <textarea className="pretty-input" rows={8}
           placeholder="예) 교실에서 같은 반 친구와 카톡 단체방에서 외모로 별명을 지어서 좀 놀렸어요. 처음엔 친구도 같이 웃어서 장난인 줄 알았는데, 그만하라고 했는데도 한 달 동안 계속됐어요..."
@@ -501,7 +652,7 @@ function SafetyBranchScreen({ action, onReset }) {
           </div>
         </div>
         <p className="leading-relaxed mb-6" style={{ color: C.ink }}>
-          이 앱이 도울 수 있는 범위를 넘어선 상황일 수 있어요. 지금 바로 도움을 받을 수 있는 곳이 있어요. 무료이고, 24시간 운영되며, 신원이 보호됩니다.
+          이 안내보다 먼저 도와줄 어른과 기관이 있어요. 아래 연락처는 모두 <strong>무료, 24시간, 신원 보호</strong>이고, 지금 바로 도움을 받을 수 있어요.
         </p>
         <div className="space-y-3 mb-6">
           {[
