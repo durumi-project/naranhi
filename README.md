@@ -9,36 +9,15 @@
 
 이 저장소에 처음 들어왔다면 *이 한 페이지만* 읽으면 시작할 수 있어요. 어려운 부분은 *반드시 막힐 수 있는 자리*에 *해결 방법까지* 적어놨어요. 막히면 GitHub Issues에 글 남기면 다른 팀원이 도와줘요.
 
-## 🚨 현재 알려진 문제 — 외부 도움 요청 중 (2026-05-18)
+## ✅ 현재 상태 (2026-05-28, ver.3)
 
-**프로덕션 Vercel Functions 30초 timeout — 모든 함수가 막혀 있어요.**
+**프로덕션 운영 중** → **https://naranhi-nu.vercel.app**
 
-- `/api/classify` (LLM 핸들러, 233줄) — 30초 timeout
-- `/api/ping` (5줄짜리 진단 함수) — **같이 timeout**
-- 즉, *코드 내용과 무관*하게 Vercel Function 자체가 응답을 못 돌려주는 상태
-- 로컬 `npm run llm:test` 는 4/5 통과 → Anthropic API 키·SDK·시스템 프롬프트는 정상
-- 어제 작동했던 코드(세션 14, HEAD `84e969f`) 로 force push 복귀했지만 *같은 timeout 재발*
+- M2 LLM 통합 + M3 벡터 검색 모두 *프로덕션에서 작동*해요.
+- 한동안 막혔던 **Vercel Functions 30초 timeout 은 해결됐어요** — 외부 개발자분이 `/api/classify` 를 *Node 런타임으로 마이그레이션* (PR #1). 도움 주신 분께 감사드려요. 🙏
+- 5/28 두루미팀 회의 결정 **11개 항목 + 추가 UX 수정**을 적용했어요 (아래 *최근 변경 사항* 참고).
 
-**외부 개발자분께 도움 요청 중**. 종합 정리: [`docs/외부_개발자_도움요청.md`](docs/외부_개발자_도움요청.md)
-
-## 도와주실 분에게 — 5분 안에 상황 파악
-
-- **무엇이 막혔는지**: 위 *현재 알려진 문제* 박스 참고. *5줄짜리 ping 함수까지* timeout 이라 LLM/SDK 자리 문제 아닐 확률 큼.
-- **시도해본 진단** (세션 15~19, 2026-05-17):
-  - 세션 15~17·19: M3 (벡터 검색) 통합 시도 → 모두 프로덕션 timeout
-  - 세션 19 후: HEAD `84e969f` (세션 14 작동 자리) 로 force push 복귀 → *같은 timeout 재발*
-  - `/api/ping` 격리 테스트 (5줄, LLM/Supabase 의존 0) → *역시 timeout*
-- **현재 의심 가설** (우선순위 순):
-  1. Vercel 프로젝트 설정 (Node 버전, region, 함수 메모리 한도)
-  2. 함수 콜드 스타트 + bundle 크기 (`api/classify.js` 가 71건 사례 컨텍스트 134KB 정적 import)
-  3. Anthropic/Supabase outbound 트래픽이 Vercel 인그레스에서 막힘
-- **봐주실 파일**:
-  - [`api/classify.js`](api/classify.js) — LLM 핸들러 (233줄, Node runtime)
-  - [`api/ping.js`](api/ping.js) — 5줄짜리 진단 함수 (이것도 timeout)
-  - [`vercel.json`](vercel.json) — `maxDuration: 30` 설정
-  - [`docs/SESSION_LOG.md`](docs/SESSION_LOG.md) — 세션 1~14 일지 (15~19 추후 보강 예정)
-  - [`docs/외부_개발자_도움요청.md`](docs/외부_개발자_도움요청.md) — 종합 상황 정리
-- **연락**: GitHub Issues · 두루미팀 채널 · `durumitech@gmail.com`
+> 지난 timeout 진단 과정은 [`docs/SESSION_LOG.md`](docs/SESSION_LOG.md) 와 [`docs/외부_개발자_도움요청.md`](docs/외부_개발자_도움요청.md) 에 기록으로 보존돼 있어요.
 
 ## 이 프로젝트가 무엇인가요
 
@@ -54,36 +33,68 @@
 - P-005: 가정폭력 신호가 함께 있는 학생 (안전 분기 페르소나)
 - 그 외 피해자·목격자·보호자
 
-## 지금 어디까지 왔나요 — 솔직히
+## 지금 어디까지 왔나요
 
-**최종 업데이트: 2026-05-17 세션 19 후 — HEAD `84e969f` (세션 14 작동 자리) 로 force push 복귀**
+**최종 업데이트: 2026-05-28 — W5.2 후, ver.3 프로덕션 운영 중**
 
-세션 15~19 (2026-05-17) 에서 M3 (벡터 검색) 통합을 시도했으나 *프로덕션 30초 timeout* 으로 막힘. 어제 작동했던 세션 14 자리로 force push 복귀했으나 *같은 timeout 재발*. `/api/ping` 5줄짜리 함수까지 timeout 이라 *코드와 무관한 Vercel Function 인프라 자체* 의심 단계 → 외부 개발자 도움 요청 중.
+지난 주(5/16~5/22) M2 LLM 통합과 M3 벡터 검색을 완료하고, 외부 개발자분의 도움(PR #1)으로 Vercel Functions timeout 까지 해결했어요. 5/28 두루미팀 회의 결정 11개 항목 + 추가 UX 수정을 적용해 **ver.3** 를 프로덕션에 올렸어요.
 
 ```
-✅ 작동하는 데모 (로컬)    localhost:5173 에서 6단계 사용자 여정 + 안전 분기 정상
-✅ GitHub 저장소           durumi-project/naranhi (비공개), 팀원 4명 합류 중
-✅ 자료 71건                가상 10건 (검수완료) + OM2 3건 + 두루 추출 58건 (검수대기)
-✅ 진짜 판례 8건            DR-PREC-001~008 (009 강제추행 SKIP, 010 학폭 무관 제외)
-✅ 첫 모든 역할             V·G·B(쌍방, 046) + P(보호자, PREC-003) + 단계 0~9 전부
-✅ 첫 모든 학교급           ES/MS/HS (OT는 미보유)
-✅ 검수 트랙               src/data/cases/PENDING ↔ REVIEWED 폴더 구조
-✅ 자동 검증               스키마 v2 (42필드) + validateCase 함수 (71/71 통과)
+✅ 프로덕션 운영          https://naranhi-nu.vercel.app — 5단계 사용자 여정 + 안전 분기 정상
+✅ 자료 71건              가상 10건(검수완료) + OM2 3건 + 두루 추출 58건(검수대기)
+✅ 진짜 판례 8건          DR-PREC-001~008 (009 강제추행 SKIP, 010 학폭 무관 제외)
+✅ 모든 역할/단계/학교급   V·G·B(쌍방)·P(보호자) + 단계 0~9 + ES/MS/HS
+✅ M2 LLM 통합            완료 — Vercel Node 런타임 /api/classify (Claude Haiku 4.5)
+✅ M3 벡터 검색            완료 — Supabase pgvector + OpenAI Embeddings, Top 5 매칭
+✅ 외부 개발자 PR #1       Vercel Functions timeout 해결 (Node 런타임 마이그레이션)
+✅ 두루미팀 회의 결정       11개 항목 + UX 수정 적용 (W1~W5.2)
+✅ 검수 트랙              src/data/cases/PENDING ↔ REVIEWED 폴더 구조
+✅ 자동 검증              스키마 v2(42필드) + validateCase (71/71 통과)
 ✅ 두루 매뉴얼 5종         활용 가능 확인됨 (docs/external/)
-✅ 두루 직접 제공 자료     50건 사례 (50/50) + 판례 10건 (8/10) — 두루 측 변환 완료
-✅ PDF 처리 인프라         poppler 설치, PDF 추출 준비 완료
-✅ 두루 검수 패키지 v1     docs/검수_패키지_v1.md (PENDING 61건 + 9개 자문 카테고리)
-🟡 두루 변호사 검수        검수 패키지 송부·의견 수렴 단계 (병행 진행)
-🟢 M2 LLM 통합 코드        세션 14 자리(JSON + 4중 가드) — 로컬 npm run llm:test 4/5 통과
-🟢 M3 벡터 검색 인프라     Supabase + pgvector + OpenAI 임베딩 (세션 15~19 구축 완료)
-❌ Vercel Functions 프로덕션  /api/classify · /api/ping 둘 다 30초 timeout (코드 무관)
-❌ M3 통합 (프로덕션)      인프라는 완료, 프로덕션 통합 3회 시도 (세션 16·17·19) 모두 timeout
-❌ M4 백엔드 + 외부 접근   미시작 (Vercel timeout 해결 후 진입)
-❌ M5 베타 사용자 테스트   미시작
-❌ 학교 현장 노출          미시작
+🟡 두루 변호사 검수        검수 패키지 송부·의견 수렴 (병행 진행)
+❌ M4 Rate limit KV·sanitization·로깅   예정
+❌ M5 베타 사용자 테스트   예정
+❌ M6 두루 공식 협력 + 학교 노출   예정
 ```
 
-**한 줄로**: *동작하는 로컬 데모 + 자료 71건 + M2/M3 코드 자리 완성. 그러나 Vercel Function 자체가 timeout — 외부 개발자 도움 요청 중.*
+**한 줄로**: *동작하는 데모 + 자료 71건 + LLM 통합 + 벡터 검색 + 두루미팀 회의 결정 적용. ver.3 프로덕션 운영 중.*
+
+## 기술 스택
+
+| layer | 기술 |
+|---|---|
+| 프런트엔드 | React 18 + Vite + Tailwind CSS |
+| 백엔드 | Vercel Serverless Functions (Node 24) — `/api/classify` |
+| 친화 응답·분류 | Anthropic **Claude Haiku 4.5** |
+| 임베딩 | OpenAI **text-embedding-3-small** (1536-dim) |
+| 벡터 검색 | Supabase PostgreSQL + **pgvector** (Top 5 매칭) |
+| 데이터 | 정적 JSON (`src/data/`) + 사례 71건 |
+
+> 비용 (실측): 호출당 약 **11원**, prompt caching 적중 시 더 저렴해요.
+
+## 최근 변경 사항 — 두루미팀 회의 결정 반영 (2026-05-28, ver.3)
+
+5/28 두루미팀 회의에서 결정한 **11개 항목 + 추가 UX 수정**을 적용했어요. 카테고리별 요약:
+
+**톤 — 어조 통일**
+- W1: 역할별(가해·피해·보호자·목격자) 어조 세분화
+- W1.5: 피해자도 **존댓말 통일** (두루 검토 결정) — 잔여 반말 호칭 제거
+
+**절차 — 학폭 특수 절차**
+- W2-A: 학교장 자체해결 · 관계회복 프로그램 · 복합 상황 안내 시스템 프롬프트 반영
+
+**UX — 사용자 흐름**
+- W2-B: 사용자 흐름 **6 → 5단계** 단순화 + 키워드 LLM 동적 생성
+- W3: 입력 화면 다양화(상황 예시 카테고리) + 심리 안전 문구
+- W5: 데모 제목 자동 추출 · 버전 표기 **ver.3** · 단계 LLM 동적
+
+**결과 화면**
+- W4: "앞으로 진행될 상황" 강조 + 상담 기관 카드 강화
+- W5.1: Landing 호칭 존댓말 + 도움 기관 안내 섹션 통합
+- W5.2: 도움 기관 카드 양식 통일
+
+> 지난 주(5/16~5/22): M2 LLM 통합 + M3 벡터 검색 완료, 외부 개발자 PR #1 으로 Vercel timeout 해결.
+> 상세 진행 기록은 [`docs/SESSION_LOG.md`](docs/SESSION_LOG.md) 참고.
 
 ## 사전 준비
 
@@ -497,17 +508,15 @@ which pdftoppm   # /opt/homebrew/bin/pdftoppm 나와야 함
 ## 다음 마일스톤
 
 ```
-[M1] 자료 30~50건 수집·검수 완료     ✅ 완료 (71건, 목표 초과)
-[M2] LLM 통합 (Claude API)            🟢 코드 완료 (로컬 npm run llm:test 4/5 통과)
-                                      ❌ 프로덕션 미작동 (Vercel Functions timeout)
-[M3] 벡터DB (Supabase pgvector)       🟢 인프라 구축 완료 (세션 15~19)
-                                      ❌ 프로덕션 통합 막힘 (3회 시도, 모두 timeout)
-[M4] 백엔드 API + 배포                ❌ 미시작 (Vercel timeout 해결 후 진입)
-[M5] 베타 사용자 테스트               ❌ 미시작
-[M6] 두루 공식 협력 + 학교 노출        ❌ 미시작
+[M1] 자료 수집·검수                     ✅ 완료 (71건, 목표 초과)
+[M2] LLM 통합 (Claude Haiku 4.5)        ✅ 완료 (프로덕션 /api/classify)
+[M3] 벡터 검색 (Supabase pgvector)      ✅ 완료 (OpenAI Embeddings, Top 5)
+[M4] Rate limit KV·sanitization·로깅    ❌ 예정
+[M5] 베타 사용자 테스트                 ❌ 예정
+[M6] 두루 공식 협력 + 학교 노출          ❌ 예정
 ```
 
-**현재 위치**: **Vercel Functions timeout 해결 대기 중** — 외부 개발자분 도움 요청 단계. M2/M3 코드는 모두 *로컬에서 작동*. 종합 정리: [`docs/외부_개발자_도움요청.md`](docs/외부_개발자_도움요청.md).
+**현재 위치**: **ver.3 프로덕션 운영 중** — https://naranhi-nu.vercel.app. M2/M3 완료, 외부 개발자 PR #1 으로 Vercel timeout 해결. 다음은 **M4** — KV 기반 rate limit · 입력 sanitization · 로깅.
 
 ### M2 진행 상황 (세션 11 기준)
 
@@ -532,7 +541,8 @@ which pdftoppm   # /opt/homebrew/bin/pdftoppm 나와야 함
 - 🟡 세션 13 tool_use 도입 후 *프로덕션 timeout 16건* 발생 → 세션 14 *길 2 후퇴* + `vercel.json` `maxDuration: 30` 안전망 + `src/App.jsx` 폴백 카드 옵션 A (사례 ≥1건 시 폴백 친화 카드 숨김) + 14세 미만 나이 옵션 제거
 - 🟢 세션 15~19 (2026-05-17) — M3 (벡터 검색) 인프라 구축: Supabase + pgvector + OpenAI 임베딩 자리 완료. 그러나 프로덕션 통합 3회 (세션 16·17·19) 모두 30초 timeout
 - ❌ 세션 19 후 — HEAD `84e969f` (세션 14 자리) 로 force push 복귀했으나 *같은 timeout 재발*. `/api/ping` 5줄 함수까지 timeout → **Vercel Functions 인프라 자체 의심** → 외부 개발자 도움 요청 단계 (`docs/외부_개발자_도움요청.md`)
-- ❌ KV rate limit + 입력 sanitization + 로깅 — 세션 12 후보였다가 *Vercel 배포 디버그* 자리로 밀려남. 프로덕션 안정 회복 후 진입
+- ✅ **외부 개발자 PR #1 — Vercel Functions timeout 해결** — `/api/classify` 를 Node 런타임으로 마이그레이션해 프로덕션 정상화. M2/M3 모두 프로덕션 작동. 도움 주신 분께 감사드려요.
+- 🟡 KV rate limit + 입력 sanitization + 로깅 — **M4 로 예정**. 프로덕션 안정화 완료 후 진입
 
 ### LLM 동작 확인 (학생 팀용)
 
@@ -601,6 +611,10 @@ npm run dev
 - *작은 진전이라도 기록* — 누가 보면 *흐름*이 보여야 함
 
 너의 한 PR이 *다음 학기 후배의 출발점*이 돼요. 부담 갖지 말고, 도움 필요하면 *언제든* 물어봐요.
+
+## 감사
+
+Vercel Function timeout 해결에 도움을 주신 외부 개발자분께 감사드립니다 (PR #1). 덕분에 M2/M3 가 프로덕션에서 작동하게 됐어요.
 
 ---
 
