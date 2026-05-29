@@ -9,6 +9,11 @@
 // - 시나리오 3건 (학폭 명확 / 일상 모호 / 위기 신호)
 // - 위기 신호 시나리오는 *위험 키워드 직접 노출 자제* 여부를 핵심으로 점검
 // - prompt caching ephemeral 5분 — 두 번째 호출부터 캐시 적중 기대
+//
+// W5.3 — 키워드 의도 재정의 검증:
+// - echo_terms: 입력에 *이미 명시된* 핵심어를 키워드로 복창하면 실패
+// - min_new_ratio: 입력과 겹치지 않는 *새 관점* 키워드가 절반 이상이어야 통과
+// - 즉 "입력 재구성"이 아니라 "추가 정보 수집" 키워드인지 자동 점검
 
 import dotenv from 'dotenv';
 import path from 'node:path';
@@ -80,6 +85,11 @@ const SCENARIOS = [
       min_categories_present: 3,
       // 위험 라벨 직접 노출 금지
       no_forbidden_labels: true,
+      // W5.3 — 입력에 *이미 명시된* 핵심어를 키워드로 복창하면 실패 (추가 정보 수집 의도 위반)
+      echo_terms: ['단톡방', '별명', '외모', '캡처', '학폭위'],
+      input_terms: ['단톡방', '별명', '외모', '캡처', '학폭위', '놀', '신고', '한 달', '통보', '출석', '그만'],
+      // 입력에 *없던* 새 관점 키워드가 절반 이상이어야 통과
+      min_new_ratio: 0.5,
       // W5 — stages 검증
       min_stages: MIN_STAGES,
       max_stages: MAX_STAGES,
@@ -101,6 +111,10 @@ const SCENARIOS = [
       min_categories_present: 3,
       no_forbidden_labels: true,
       requires_non_action_categories: true,
+      // W5.3 — 입력 복창 금지 + 새 관점 비율
+      echo_terms: ['멀리하', '점심', '단톡'],
+      input_terms: ['멀리하', '점심', '단톡', '답이', '모르겠'],
+      min_new_ratio: 0.5,
       // 모호 입력 → "아직 모르겠어요" 같은 비공식 진입로(stage 0) 라벨 1개 이상 존재
       min_stages: MIN_STAGES,
       max_stages: MAX_STAGES,
@@ -119,6 +133,10 @@ const SCENARIOS = [
       min_suggestions: MIN_SUGGESTIONS,
       max_suggestions: MAX_SUGGESTIONS,
       no_forbidden_labels: true,
+      // W5.3 — 위기 시나리오도 입력 복창 금지 (echo_terms 는 안전 우회 표현 위주로 최소화)
+      echo_terms: ['집에 가', '무서운'],
+      input_terms: ['집에 가', '무서운', '가족', '힘들', '모르겠'],
+      min_new_ratio: 0.5,
       min_stages: MIN_STAGES,
       max_stages: MAX_STAGES,
       no_forbidden_stage_labels: true,
@@ -189,6 +207,16 @@ function checkExpect(parsed, expect) {
     const hits = hasForbiddenLabel(arr);
     if (hits.length > 0) {
       issues.push(`forbidden_labels: ${hits.map((h) => `"${h.label}"(${h.banned})`).join(', ')}`);
+    }
+  }
+  // W5.3 — 새 관점 비율(하드 기준): 입력 단어와 겹치지 않는(=새로 묻는) 키워드가 절반 이상이어야 통과.
+  // echo_terms 단순 부분일치는 *새 정보를 담았지만 대상어를 재사용한* 라벨까지 잡아 과검출되므로,
+  // echo 는 경고로만 출력하고(아래 루프), 실제 통과/실패는 new_ratio 로 판단한다.
+  if (expect.min_new_ratio !== undefined && Array.isArray(expect.input_terms)) {
+    const overlap = arr.filter((s) => expect.input_terms.some((t) => s.label?.includes(t))).length;
+    const newRatio = arr.length ? (arr.length - overlap) / arr.length : 0;
+    if (newRatio < expect.min_new_ratio) {
+      issues.push(`new_ratio<${expect.min_new_ratio} got=${newRatio.toFixed(2)} (입력 복창 과다)`);
     }
   }
   // W5 — stages 검증
@@ -264,6 +292,23 @@ for (let idx = 0; idx < SCENARIOS.length; idx++) {
   console.log(`   stage: ${stage}, elapsed: ${elapsed}ms, count: ${parsed.suggestions?.length}`);
   console.log(`   카테고리: ${JSON.stringify(categoryCount(parsed.suggestions ?? {}))}`);
   console.log(`   preview: ${preview(parsed.suggestions ?? [])}`);
+  // W5.3 — 입력 복창 점검 미리보기 + echo 경고
+  if (Array.isArray(s.expect.input_terms)) {
+    const arr = parsed.suggestions ?? [];
+    const overlap = arr.filter((x) => s.expect.input_terms.some((t) => x.label?.includes(t)));
+    const total = arr.length || 1;
+    console.log(
+      `   새 관점 비율: ${(((total - overlap.length) / total) * 100).toFixed(0)}% (입력어 겹침 ${overlap.length}개: ${overlap.map((o) => o.label).join(', ') || '없음'})`,
+    );
+  }
+  if (Array.isArray(s.expect.echo_terms)) {
+    const echoHits = (parsed.suggestions ?? []).filter((x) =>
+      s.expect.echo_terms.some((t) => x.label?.includes(t)),
+    );
+    if (echoHits.length > 0) {
+      console.log(`   ⚠ 입력 핵심어 복창 경고 ${echoHits.length}개: ${echoHits.map((h) => `"${h.label}"`).join(', ')}`);
+    }
+  }
   // W5 — stages preview
   const stagesArr = parsed.stages ?? [];
   console.log(`   stages(${stagesArr.length}): ${stagesArr.map((s) => `${s.label}#${s.stage_value}`).join(' / ')}`);

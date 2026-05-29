@@ -531,7 +531,7 @@ function Landing({ onStart, onDemo }) {
               14세 이상 학생을 위한 도구
             </div>
           </div>
-          <h1 className="font-display text-5xl md:text-6xl font-bold leading-[1.1] mb-6" style={{ color: C.ink }}>
+          <h1 className="font-display text-4xl md:text-5xl font-bold leading-[1.1] mb-6" style={{ color: C.ink }}>
             법은 어렵지 않아요.<br />
             <span style={{ color: C.accent }}>당신의 곁에 나란히</span> 설게요.
           </h1>
@@ -1009,14 +1009,14 @@ function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
       <div className="card-base p-6 mb-5">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles size={16} color={C.accent} />
-          <h3 className="font-semibold" style={{ color: C.ink }}>해당되는 키워드를 골라 주세요</h3>
+          <h3 className="font-semibold" style={{ color: C.ink }}>상황을 더 자세히 알려주는 키워드를 골라 주세요</h3>
           {suggestionsLoading && <Loader2 size={14} color={C.amberDeep} className="anim-spin" />}
           {data.keyword_status === 'fallback' && (
             <span className="chip text-[10px]" style={{ background: C.bg, color: C.amberDeep, padding: '2px 8px' }}>기본 키워드</span>
           )}
         </div>
         <p className="text-sm mb-4" style={{ color: C.inkSoft }}>
-          여러 개 골라도 돼요. 해당이 없으면 그냥 건너뛰셔도 괜찮아요.
+          말로 다 적기 어려웠던 부분을 골라 주세요. 선택하면 더 정확한 안내를 드릴 수 있어요. 해당이 없으면 건너뛰셔도 괜찮아요.
         </p>
         <div className="flex flex-wrap gap-2">
           {suggestions.map((s) => {
