@@ -533,10 +533,10 @@ function Landing({ onStart, onDemo }) {
           </div>
           <h1 className="font-display text-5xl md:text-6xl font-bold leading-[1.1] mb-6" style={{ color: C.ink }}>
             법은 어렵지 않아요.<br />
-            <span style={{ color: C.accent }}>너의 옆에 나란히</span> 설게요.
+            <span style={{ color: C.accent }}>당신의 곁에 나란히</span> 설게요.
           </h1>
           <p className="text-lg leading-relaxed mb-8" style={{ color: C.inkSoft }}>
-            학교폭력으로 어려움을 겪고 있다면 너와 비슷한 사례를 찾아<br />
+            학교폭력으로 어려움을 겪고 있다면 당신과 비슷한 사례를 찾아<br />
             지금 어떤 절차에 있는지, 무엇을 준비해야 하는지 쉬운 말로 알려드려요.
           </p>
           <div className="flex flex-wrap gap-3 mb-4">
@@ -1463,22 +1463,34 @@ function StageForecastSection({ stage }) {
   );
 }
 
-/* W4-B2 — 상담 기관 카드 강화 (회의 결과 항목 7).
- *  - 기존 ResourcesSection 은 데이터 매칭 기반으로 유지.
- *  - 이 컴포넌트는 *상수 데이터(counseling_resources.json)* 를 화해·중재 / 24시간 / 익명 배지 포함해 강조. */
-function CounselingResourcesSection({ resources }) {
-  if (!resources || resources.length === 0) return null;
+/* W5.1 — 도움 기관 안내 통합 (이전 CounselingResourcesSection + ResourcesSection).
+ *  기존엔 "같이 이야기할 수 있는 곳" / "혼자 해결하기 어렵다면" 두 섹션으로 분리돼 중복 인지를 줬다.
+ *  하나의 "도움받을 수 있는 곳" 섹션으로 통합: 상단 어른 안내 한 줄 + 기관 카드들.
+ *   - counseling: 상수 데이터(24시간/익명/무료 배지 + 홈페이지) → 풍부 카드
+ *   - matched: 사용자 상황 맞춤 기관 → 보조 카드
+ *   - 1388·117 처럼 양쪽에 겹치는 기관은 대표 전화번호 기준으로 matched 에서 중복 제거. */
+function HelpSection({ counseling = [], matched = [] }) {
+  const primaryNum = (phone) => (String(phone).match(/^[\d-]+/) || [''])[0].replace(/\D/g, '');
+  const counselNums = new Set(counseling.map(r => primaryNum(r.phone)).filter(Boolean));
+  const extraMatched = matched.filter(r => {
+    const n = primaryNum(r.phone);
+    return !(n && counselNums.has(n));
+  });
+
+  if (counseling.length === 0 && extraMatched.length === 0) return null;
+
   return (
     <div className="card-base p-7" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
       <div className="flex items-center gap-2 mb-1">
         <Users size={18} color={C.amberDeep} />
-        <h3 className="font-semibold text-lg" style={{ color: C.ink }}>같이 이야기할 수 있는 곳</h3>
+        <h3 className="font-semibold text-lg" style={{ color: C.ink }}>도움받을 수 있는 곳</h3>
       </div>
       <p className="text-sm mb-5" style={{ color: C.inkSoft }}>
-        혼자 결정하지 않으셔도 됩니다. 각 기관의 *역할·운영 시간·익명성*을 참고해서 편한 곳을 골라 보세요.
+        혼자 결정하지 않으셔도 됩니다. 담임·상담 선생님이나 보호자 같은 가까운 어른부터 아래 기관까지, 함께할 수 있는 곳이 많아요.
+        각 기관의 *역할·운영 시간·익명성*을 참고해 편한 곳을 골라 보세요.
       </p>
       <div className="grid sm:grid-cols-2 gap-3">
-        {resources.map((r) => (
+        {counseling.map((r) => (
           <div key={r.id} style={{
             background: C.card, padding: 16, borderRadius: 14,
             border: `1px solid ${C.lineSoft}`,
@@ -1525,29 +1537,26 @@ function CounselingResourcesSection({ resources }) {
             </div>
           </div>
         ))}
+        {extraMatched.map((r) => (
+          <div key={r.res_id} style={{
+            background: C.card, padding: 16, borderRadius: 14,
+            border: `1px solid ${C.lineSoft}`,
+            display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-semibold text-sm" style={{ color: C.ink }}>{r.name}</span>
+              {r.tags?.[0] && (
+                <span className="chip text-[10px]" style={{ background: C.tagYellow, color: C.amberDeep, padding: '2px 8px' }}>{r.tags[0]}</span>
+              )}
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{r.description}</p>
+            <div className="flex items-center gap-2 mt-1" style={{ borderTop: `1px dashed ${C.lineSoft}`, paddingTop: 8, color: C.accent, fontSize: 13, fontWeight: 600 }}>
+              {/^\d/.test(r.phone) ? <Phone size={12} /> : <ExternalLink size={12} />}
+              <span>{r.phone}</span>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
-  );
-}
-
-function ResourcesSection({ resources }) {
-  if (resources.length === 0) return null;
-  return (
-    <div className="card-base p-7" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
-      <div className="flex items-center gap-2 mb-1"><Users size={18} color={C.amberDeep} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>혼자 해결하기 어렵다면</h3></div>
-      <p className="text-sm mb-5" style={{ color: C.inkSoft }}>상황에 맞는 무료 상담처예요.</p>
-      <div className="grid sm:grid-cols-2 gap-3">{resources.map(r => (
-        <div key={r.res_id} style={{ background: C.card, padding: 16, borderRadius: 14, border: `1px solid ${C.lineSoft}` }}>
-          <div className="flex items-start justify-between mb-2 gap-2">
-            <span className="font-semibold text-sm" style={{ color: C.ink }}>{r.name}</span>
-            <span className="chip text-[10px]" style={{ background: C.tagYellow, color: C.amberDeep, padding: '2px 8px' }}>{r.tags?.[0]}</span>
-          </div>
-          <p className="text-xs mb-3 leading-relaxed" style={{ color: C.inkSoft }}>{r.description}</p>
-          <div className="flex items-center gap-2" style={{ color: C.accent, fontSize: 13, fontWeight: 600 }}>
-            {/^\d+/.test(r.phone) ? <Phone size={13} /> : <ExternalLink size={13} />}{r.phone}
-          </div>
-        </div>
-      ))}</div>
     </div>
   );
 }
@@ -1870,14 +1879,9 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
         <div className="anim-fade-up" style={{ animationDelay: '0.25s' }}><FAQSection faqs={matchedFaqs} /></div>
       </div>
 
-      {/* W4-B2 — 강화된 상담 기관 카드 (회의 결과 항목 7). 24시간/익명/무료 배지 + 홈페이지 링크. */}
-      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.28s' }}>
-        <CounselingResourcesSection resources={COUNSELING_RESOURCES} />
-      </div>
-
-      {/* 기존 매칭 기반 기관 (보완) */}
-      <div className="anim-fade-up mb-8" style={{ animationDelay: '0.3s' }}>
-        <ResourcesSection resources={matchedResources} />
+      {/* W5.1 — 도움 기관 안내 통합. 상담 상수(배지·홈페이지) + 상황 맞춤 기관을 한 섹션으로. */}
+      <div className="anim-fade-up mb-8" style={{ animationDelay: '0.28s' }}>
+        <HelpSection counseling={COUNSELING_RESOURCES} matched={matchedResources} />
       </div>
 
       {/* 면책 */}
