@@ -41,6 +41,7 @@
     "res_id": "R-003",
     "name": "대한법률구조공단",
     "phone": "132",
+    "is_free": true,
     "description": "청소년 무료 법률상담 및 변호사 연계",
     "tags": [
       "법률",
@@ -56,7 +57,8 @@
   {
     "res_id": "R-004",
     "name": "두루 (공익법센터)",
-    "phone": "duroo.org",
+    "phone": "",
+    "website": "https://duroo.org",
     "description": "아동·청소년 인권 전문 변호사 단체",
     "tags": [
       "전문",
@@ -71,7 +73,8 @@
   {
     "res_id": "R-005",
     "name": "청소년인권운동연대 지음",
-    "phone": "youthhr.org",
+    "phone": "",
+    "website": "https://youthhr.org",
     "description": "어린이청소년인권상담소 운영",
     "tags": [
       "인권",
@@ -89,6 +92,10 @@
     "res_id": "R-006",
     "name": "여성긴급전화",
     "phone": "1366",
+    "hours": "24시간",
+    "is_24h": true,
+    "is_free": true,
+    "is_anonymous": true,
     "description": "가정폭력·성폭력 24시간 상담·보호",
     "tags": [
       "긴급",

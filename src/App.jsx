@@ -1463,21 +1463,100 @@ function StageForecastSection({ stage }) {
   );
 }
 
+/* W5.2 — 도움 기관 카드 양식 통일.
+ *  counseling 상수와 matched(상황 맞춤)의 서로 다른 데이터 형태를 normalizeResource 로
+ *  동일 인터페이스로 변환해, 하나의 ResourceCard 로 렌더한다.
+ *  - 알 수 없는 필드(운영시간·홈페이지·익명성 등)는 표시하지 않는다(조건부 렌더).
+ *  - anonymous 는 3-state: true(익명 가능) / false(실명 필요) / null(정보 없음 → 배지 없음).
+ *    잘못된 단정을 피하려 *모르면 null* 로 둔다. */
+function normalizeResource(raw, source) {
+  return {
+    key: raw.id || raw.res_id || raw.name,
+    name: raw.name,
+    phone: raw.phone || '',
+    web: raw.website || raw.web || '',
+    hours: raw.hours || '',
+    is24h: raw.is_24h ?? (raw.hours === '24시간'),
+    free: (raw.is_free ?? raw.free) === true,
+    anonymous: raw.is_anonymous ?? raw.anonymous ?? null,
+    role: raw.role || raw.description || '',
+    source,
+  };
+}
+
+function ResourceCard({ r }) {
+  const hasBadge = r.is24h || r.free || r.anonymous !== null;
+  return (
+    <div style={{
+      background: C.card, padding: 16, borderRadius: 14,
+      border: `1px solid ${C.lineSoft}`,
+      display: 'flex', flexDirection: 'column', gap: 8,
+    }}>
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-semibold text-sm" style={{ color: C.ink }}>{r.name}</span>
+        {r.web && (
+          <a href={r.web} target="_blank" rel="noreferrer noopener"
+            style={{ color: C.accent, fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <ExternalLink size={11} /> 홈페이지
+          </a>
+        )}
+      </div>
+      {hasBadge && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {r.is24h && (
+            <span className="chip text-[10px]" style={{ background: C.tagBlue, color: C.accent, padding: '2px 8px' }}>
+              <Clock size={10} /> 24시간
+            </span>
+          )}
+          {r.free && (
+            <span className="chip text-[10px]" style={{ background: C.tagYellow, color: C.amberDeep, padding: '2px 8px' }}>
+              무료
+            </span>
+          )}
+          {r.anonymous === true && (
+            <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
+              익명 가능
+            </span>
+          )}
+          {r.anonymous === false && (
+            <span className="chip text-[10px]" style={{ background: C.bg, color: C.inkMute, padding: '2px 8px' }}>
+              실명 필요
+            </span>
+          )}
+        </div>
+      )}
+      {r.role && <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{r.role}</p>}
+      {(r.phone || r.hours) && (
+        <div className="flex items-center justify-between gap-2 mt-1" style={{ borderTop: `1px dashed ${C.lineSoft}`, paddingTop: 8 }}>
+          {r.phone ? (
+            <div className="flex items-center gap-2" style={{ color: C.accent, fontSize: 13, fontWeight: 600 }}>
+              {/^\d/.test(r.phone) ? <Phone size={12} /> : <Info size={12} />}
+              <span>{r.phone}</span>
+            </div>
+          ) : <span />}
+          {r.hours && <span className="text-[11px]" style={{ color: C.inkMute }}>{r.hours}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* W5.1 — 도움 기관 안내 통합 (이전 CounselingResourcesSection + ResourcesSection).
- *  기존엔 "같이 이야기할 수 있는 곳" / "혼자 해결하기 어렵다면" 두 섹션으로 분리돼 중복 인지를 줬다.
- *  하나의 "도움받을 수 있는 곳" 섹션으로 통합: 상단 어른 안내 한 줄 + 기관 카드들.
- *   - counseling: 상수 데이터(24시간/익명/무료 배지 + 홈페이지) → 풍부 카드
- *   - matched: 사용자 상황 맞춤 기관 → 보조 카드
- *   - 1388·117 처럼 양쪽에 겹치는 기관은 대표 전화번호 기준으로 matched 에서 중복 제거. */
+ *  하나의 "도움받을 수 있는 곳" 섹션: 상단 어른 안내 한 줄 + 기관 카드들.
+ *  W5.2 — counseling 상수와 matched 상황 맞춤 기관을 *하나의 배열*로 합쳐 동일 카드로 렌더.
+ *  1388·117 처럼 양쪽에 겹치는 기관은 대표 전화번호 기준으로 matched 에서 중복 제거. */
 function HelpSection({ counseling = [], matched = [] }) {
   const primaryNum = (phone) => (String(phone).match(/^[\d-]+/) || [''])[0].replace(/\D/g, '');
   const counselNums = new Set(counseling.map(r => primaryNum(r.phone)).filter(Boolean));
-  const extraMatched = matched.filter(r => {
-    const n = primaryNum(r.phone);
-    return !(n && counselNums.has(n));
-  });
+  // counseling 먼저, 그다음 상황 맞춤(matched). 겹치는 번호는 matched 에서 제거.
+  const list = [
+    ...counseling.map(r => normalizeResource(r, 'counseling')),
+    ...matched
+      .filter(r => { const n = primaryNum(r.phone); return !(n && counselNums.has(n)); })
+      .map(r => normalizeResource(r, 'matched')),
+  ];
 
-  if (counseling.length === 0 && extraMatched.length === 0) return null;
+  if (list.length === 0) return null;
 
   return (
     <div className="card-base p-7" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
@@ -1490,72 +1569,7 @@ function HelpSection({ counseling = [], matched = [] }) {
         각 기관의 *역할·운영 시간·익명성*을 참고해 편한 곳을 골라 보세요.
       </p>
       <div className="grid sm:grid-cols-2 gap-3">
-        {counseling.map((r) => (
-          <div key={r.id} style={{
-            background: C.card, padding: 16, borderRadius: 14,
-            border: `1px solid ${C.lineSoft}`,
-            display: 'flex', flexDirection: 'column', gap: 8,
-          }}>
-            <div className="flex items-start justify-between gap-2">
-              <span className="font-semibold text-sm" style={{ color: C.ink }}>{r.name}</span>
-              {r.web && (
-                <a href={r.web} target="_blank" rel="noreferrer noopener"
-                  style={{ color: C.accent, fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <ExternalLink size={11} /> 홈페이지
-                </a>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {r.hours === '24시간' && (
-                <span className="chip text-[10px]" style={{ background: C.tagBlue, color: C.accent, padding: '2px 8px' }}>
-                  <Clock size={10} /> 24시간
-                </span>
-              )}
-              {r.free && (
-                <span className="chip text-[10px]" style={{ background: C.tagYellow, color: C.amberDeep, padding: '2px 8px' }}>
-                  무료
-                </span>
-              )}
-              {r.anonymous && (
-                <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
-                  익명 가능
-                </span>
-              )}
-              {!r.anonymous && (
-                <span className="chip text-[10px]" style={{ background: C.bg, color: C.inkMute, padding: '2px 8px' }}>
-                  실명 필요
-                </span>
-              )}
-            </div>
-            <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{r.role}</p>
-            <div className="flex items-center justify-between gap-2 mt-1" style={{ borderTop: `1px dashed ${C.lineSoft}`, paddingTop: 8 }}>
-              <div className="flex items-center gap-2" style={{ color: C.accent, fontSize: 13, fontWeight: 600 }}>
-                {/^\d/.test(r.phone) ? <Phone size={12} /> : <Info size={12} />}
-                <span>{r.phone}</span>
-              </div>
-              <span className="text-[11px]" style={{ color: C.inkMute }}>{r.hours}</span>
-            </div>
-          </div>
-        ))}
-        {extraMatched.map((r) => (
-          <div key={r.res_id} style={{
-            background: C.card, padding: 16, borderRadius: 14,
-            border: `1px solid ${C.lineSoft}`,
-            display: 'flex', flexDirection: 'column', gap: 8,
-          }}>
-            <div className="flex items-start justify-between gap-2">
-              <span className="font-semibold text-sm" style={{ color: C.ink }}>{r.name}</span>
-              {r.tags?.[0] && (
-                <span className="chip text-[10px]" style={{ background: C.tagYellow, color: C.amberDeep, padding: '2px 8px' }}>{r.tags[0]}</span>
-              )}
-            </div>
-            <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{r.description}</p>
-            <div className="flex items-center gap-2 mt-1" style={{ borderTop: `1px dashed ${C.lineSoft}`, paddingTop: 8, color: C.accent, fontSize: 13, fontWeight: 600 }}>
-              {/^\d/.test(r.phone) ? <Phone size={12} /> : <ExternalLink size={12} />}
-              <span>{r.phone}</span>
-            </div>
-          </div>
-        ))}
+        {list.map(r => <ResourceCard key={r.key} r={r} />)}
       </div>
     </div>
   );
