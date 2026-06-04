@@ -377,6 +377,40 @@ function getStageForecast(stageNum) {
   return STAGE_FORECASTS[safe] || [];
 }
 
+/* ver.3 — 학폭위 처분(조치) 호수 안내.
+ * ⚠️ 법적 주의(두루 검수 필요): 학교폭력예방법 제17조제1항의 법정 조치는 *1~8호*이며
+ *   8호가 '퇴학처분'(초·중학생은 의무교육이라 미적용)입니다. '자퇴 권고'는 법령상 별도 호수가
+ *   아닙니다. 아래 1~9호 표기는 두루미팀 요청(지시서)에 따른 것으로, 배포 전 두루 변호사 검수를
+ *   권장합니다. (CLAUDE.md §2-4 영역 C — 법조항 정확성)
+ */
+const PUNISHMENT_GUIDE = {
+  1: { name: '서면사과', desc: '피해 학생에게 편지나 말로 사과하는 처분이에요. 가장 가벼운 처분에 속해요.' },
+  2: { name: '접촉·협박·보복 금지', desc: '피해 학생에게 다가가거나 위협·보복하지 않도록 하는 처분이에요.' },
+  3: { name: '학교 내 봉사', desc: '학교 안에서 정해진 봉사활동을 하는 처분이에요.' },
+  4: { name: '사회봉사', desc: '학교 밖 기관에서 봉사활동을 하는 처분이에요.' },
+  5: { name: '특별교육 이수', desc: '학폭위에서 결정하는 처분이에요. 전문가 상담·교육을 받는 과정이에요.' },
+  6: { name: '출석정지', desc: '일정 기간 학교에 나오지 못하게 하는 처분이에요. 그 기간은 출석으로 인정되지 않을 수 있어요.' },
+  7: { name: '전학', desc: '다른 학교로 옮기게 하는 처분이에요. 무거운 편에 속해요.' },
+  8: { name: '자퇴 권고', desc: '학교를 스스로 그만두도록 권하는 처분이에요. 매우 무거운 단계예요.' },
+  9: { name: '퇴학', desc: '학교에서 내보내는 가장 무거운 처분이에요. 고등학생에게만 적용돼요(초·중학생은 의무교육이라 적용되지 않아요).' },
+};
+
+/* 사례의 sentence·disposition 등 문자열에서 'N호' 를 찾아 PUNISHMENT_GUIDE 와 매핑.
+ * 중복 호수는 1회만. 등장 순서 보존. */
+function extractPunishments(...texts) {
+  const found = new Map();
+  for (const t of texts) {
+    if (typeof t !== 'string') continue;
+    const re = /([1-9])\s*호/g;
+    let m;
+    while ((m = re.exec(t))) {
+      const n = Number(m[1]);
+      if (PUNISHMENT_GUIDE[n] && !found.has(n)) found.set(n, PUNISHMENT_GUIDE[n]);
+    }
+  }
+  return [...found.entries()].map(([num, g]) => ({ num, ...g }));
+}
+
 /* ============================================================================
    DESIGN TOKENS
    ============================================================================ */
@@ -1236,6 +1270,8 @@ function CaseDetailModal({ c, onClose }) {
     document.addEventListener('keydown', k);
     return () => document.removeEventListener('keydown', k);
   }, [onClose]);
+  // ver.3 — 사례의 처분 표기(sentence·disposition)에서 'N호' 를 찾아 쉬운 설명을 함께 노출.
+  const punishments = extractPunishments(c.sentence, c.disposition_summary);
   return (
     <div className="fixed inset-0 z-50 anim-fade-in" style={{ background: 'rgba(31,45,31,0.55)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
       <div className="h-full overflow-y-auto py-10 px-4">
@@ -1291,6 +1327,29 @@ function CaseDetailModal({ c, onClose }) {
               </div>
             </div>
           </div>
+          {/* ver.3 — 처분 호수 쉬운 설명. 사례 처분 표기에 'N호' 가 있으면 함께 안내. */}
+          {punishments.length > 0 && (
+            <div className="card-base p-5 mb-4" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Scale size={14} color={C.amberDeep} />
+                <h4 className="font-semibold text-sm" style={{ color: C.ink }}>이 처분은 어떤 뜻인가요?</h4>
+              </div>
+              <div className="space-y-2">
+                {punishments.map((p) => (
+                  <div key={p.num} style={{ background: C.card, borderRadius: 10, padding: '10px 12px' }}>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="chip text-[11px]" style={{ background: C.amber, color: '#fff', padding: '2px 9px' }}>{p.num}호</span>
+                      <span className="font-semibold text-sm" style={{ color: C.ink }}>{p.name}</span>
+                    </div>
+                    <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] mt-3 leading-relaxed" style={{ color: C.inkMute }}>
+                처분 단계는 사건의 사실관계에 따라 달라질 수 있어요. 자세한 내용은 변호사·두루 공익법센터에 확인해 보세요.
+              </p>
+            </div>
+          )}
           {c.recognition !== '불인정' && c.key_factors.length > 0 && (
             <div className="card-base p-5 mb-4" style={{ background: C.card }}>
               <div className="flex items-center gap-2 mb-3">
