@@ -391,24 +391,24 @@ const C = {
 };
 
 /* ============================================================================
-   DEMO PERSONAS — 4순위 핵심 검증 도구
+   EXAMPLE PERSONAS — 4순위 핵심 검증 도구 (사용자에게는 '예시'로 노출)
    ============================================================================ */
 
-/* W5-1 — 데모 카드 친화 제목 자동 추출.
+/* W5-1 — 예시 카드 친화 제목 자동 추출.
  *  - "15세 단톡방 외모 비하, 학폭위 통보" → "단톡방 외모 비하"
  *  - summary 의 첫 콤마 앞 절을 가져오고, 앞부분 "NN세 " 접두를 떼는 식.
  *  - 12자 넘어가면 줄임표.
  *  - summary 가 비어있으면 label 폴백. */
 function derivePersonaTitle(p) {
   const raw = (p.summary ?? p.label ?? '').toString().trim();
-  if (!raw) return '데모';
+  if (!raw) return '예시';
   const firstClause = raw.split(/[,，]/, 1)[0].trim();
   const stripped = firstClause.replace(/^(만\s*)?\d+\s*세\s+/, '').trim();
   const out = stripped.length > 0 ? stripped : firstClause;
   return out.length > 12 ? `${out.slice(0, 12)}…` : out;
 }
 
-const DEMO_PERSONAS = [
+const EXAMPLE_PERSONAS = [
   {
     id: 'P-001', emoji: '📱', label: '사이버 가해자',
     expected_code: 'SV-CY-G-4-MS', age_band: '14-15세', gender: '남자',
@@ -518,7 +518,7 @@ function ProgressBar({ step, total }) {
   );
 }
 
-function Landing({ onStart, onDemo }) {
+function Landing({ onStart, onExample }) {
   return (
     <div className="max-w-6xl mx-auto px-6 pt-10 pb-20 anim-fade-in">
       <div className="grid md:grid-cols-12 gap-10 items-center mb-12">
@@ -544,14 +544,24 @@ function Landing({ onStart, onDemo }) {
           </div>
         </div>
         <div className="md:col-span-5 anim-fade-up" style={{ animationDelay: '0.1s' }}>
-          {/* W5-4 — 기존 "데이터 구동 검증" 헤더·문구 박스 제거. 데모 카드만 유지.
-              W5-1 — 데모 카드 제목을 코드명(P-001 등) 대신 summary 기반 친화 제목으로. */}
+          {/* W5-4 — 기존 "데이터 구동 검증" 헤더·문구 박스 제거. 예시 카드만 유지.
+              W5-1 — 예시 카드 제목을 코드명(P-001 등) 대신 summary 기반 친화 제목으로.
+              ver.3 — '데모' → '예시' 용어 통일. 카드 위 설명 한 줄 + '예시 N: 제목' 형식. */}
           <div style={{ background: C.cardWarm, border: `1.5px solid ${C.line}`, borderRadius: 28, padding: 24, boxShadow: `0 30px 60px -30px ${C.amber}55` }}>
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <PlayCircle size={16} color={C.amberDeep} />
+                <span className="font-semibold text-sm" style={{ color: C.ink }}>예시로 미리 체험해 보세요</span>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>
+                아래 예시를 누르면 실제 입력 없이도 어떤 안내를 받게 되는지 바로 볼 수 있어요.
+              </p>
+            </div>
             <div className="space-y-2">
-              {DEMO_PERSONAS.map(p => {
+              {EXAMPLE_PERSONAS.map((p, i) => {
                 const title = derivePersonaTitle(p);
                 return (
-                  <button key={p.id} onClick={() => onDemo(p)} style={{
+                  <button key={p.id} onClick={() => onExample(p)} style={{
                     width: '100%', textAlign: 'left', padding: 12,
                     background: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 12,
                     cursor: 'pointer', transition: 'all 0.15s',
@@ -562,7 +572,7 @@ function Landing({ onStart, onDemo }) {
                     <span style={{ fontSize: 22 }}>{p.emoji}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm" style={{ color: C.ink }}>{title}</span>
+                        <span className="font-semibold text-sm" style={{ color: C.ink }}>예시 {i + 1}: {title}</span>
                         <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
                           {p.age_band}
                         </span>
@@ -768,12 +778,17 @@ function StepSituation({ data, onChange, onNext, onBack }) {
         <p style={{ color: C.inkSoft }}>어려운 말 몰라도 괜찮아요. 평소에 이야기하듯 편하게 적어주세요.</p>
       </div>
       <div className="card-base p-7 mb-5">
-        <div className="mb-1 flex items-center gap-2">
+        <div className="mb-2 flex items-center gap-2 flex-wrap">
           <Sparkles size={14} color={C.amberDeep} />
           <label className="block text-sm font-semibold" style={{ color: C.ink }}>본인 상황에 가까운 예시를 골라 시작해 보세요</label>
+          <span className="chip anim-pulse" style={{
+            background: C.amber, color: '#fff', padding: '3px 10px', fontSize: 11, fontWeight: 700,
+          }}>
+            👆 클릭하면 자동 입력돼요!
+          </span>
         </div>
         <p className="text-xs mb-4" style={{ color: C.inkMute }}>
-          예시를 누르면 자동으로 채워져요. 마음에 드는 게 없으면 그냥 비워두고 직접 적어도 괜찮아요.
+          마음에 드는 예시가 없으면 그냥 비워두고 직접 적어도 괜찮아요.
         </p>
         <div className="grid sm:grid-cols-2 gap-2 mb-5">
           {SITUATION_EXAMPLES.map((ex) => {
@@ -957,10 +972,17 @@ function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
                 <div className="font-bold text-sm" style={{ color: C.ink }}>{ROLE_LABELS[data.classification.role]}</div>
               </div>
             </div>
-            <button onClick={() => setEditing(true)} className="btn-ghost text-xs" style={{
-              width: '100%', justifyContent: 'center', padding: '8px 12px', background: C.card,
+            <p className="text-xs mb-2 flex items-center gap-1.5" style={{ color: C.amberDeep, fontWeight: 600 }}>
+              <AlertCircle size={13} /> 분류가 실제 상황과 다른가요? 직접 고치면 안내가 더 정확해져요.
+            </p>
+            <button onClick={() => setEditing(true)} style={{
+              width: '100%', justifyContent: 'center', padding: '12px 16px',
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              background: C.amberDeep, color: '#fff', border: 'none',
+              boxShadow: `0 6px 16px -8px ${C.amberDeep}`,
             }}>
-              <Code size={13} /> 분류가 맞지 않으면 직접 수정하기
+              <Code size={16} /> 분류를 수정하시겠어요?
             </button>
           </>
         ) : (
@@ -1108,7 +1130,7 @@ function StepLoading({ status }) {
         <Loader2 size={36} color={C.amberDeep} className="anim-spin" />
       </div>
       <h2 className="font-display text-3xl font-bold mb-3" style={{ color: C.ink }}>분석하고 있어요</h2>
-      <p style={{ color: C.inkSoft, marginBottom: 8 }}>잠깐만 기다려줘요.</p>
+      <p style={{ color: C.inkSoft, marginBottom: 8 }}>잠깐만 기다려 주세요.</p>
       {status === 'llm_pending' && (
         <p style={{ color: C.inkMute, fontSize: 12, marginBottom: 32 }}>응답이 도착하는 데 보통 3~10초 정도 걸려요.</p>
       )}
@@ -1456,7 +1478,7 @@ function StageForecastSection({ stage }) {
         <Heart size={16} color={C.accent} style={{ flexShrink: 0, marginTop: 2 }} />
         <div className="text-sm leading-relaxed" style={{ color: C.ink }}>
           학교장 자체해결, <strong>관계회복 프로그램</strong>처럼 법적 절차 외에도 화해와 회복으로 도움받을 수 있는 길이 있어요.
-          처분만이 답이 아니라는 점, 같이 기억해 둬요.
+          처분만이 답이 아니라는 점, 함께 기억해 두면 좋아요.
         </div>
       </div>
     </div>
@@ -1484,16 +1506,20 @@ function normalizeResource(raw, source) {
   };
 }
 
-function ResourceCard({ r }) {
+function ResourceCard({ r, highlight = false }) {
   const hasBadge = r.is24h || r.free || r.anonymous !== null;
   return (
     <div style={{
-      background: C.card, padding: 16, borderRadius: 14,
-      border: `1px solid ${C.lineSoft}`,
+      background: highlight ? C.cardWarm : C.card, padding: 16, borderRadius: 14,
+      border: `1.5px solid ${highlight ? C.amber : C.lineSoft}`,
+      boxShadow: highlight ? `0 8px 20px -14px ${C.amber}88` : 'none',
       display: 'flex', flexDirection: 'column', gap: 8,
     }}>
       <div className="flex items-start justify-between gap-2">
-        <span className="font-semibold text-sm" style={{ color: C.ink }}>{r.name}</span>
+        <span className="font-semibold text-sm flex items-center gap-1.5" style={{ color: C.ink }}>
+          {highlight && <span className="chip text-[9px]" style={{ background: C.amber, color: '#fff', padding: '1px 7px' }}>추천</span>}
+          {r.name}
+        </span>
         {r.web && (
           <a href={r.web} target="_blank" rel="noreferrer noopener"
             style={{ color: C.accent, fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
@@ -1545,18 +1571,47 @@ function ResourceCard({ r }) {
  *  하나의 "도움받을 수 있는 곳" 섹션: 상단 어른 안내 한 줄 + 기관 카드들.
  *  W5.2 — counseling 상수와 matched 상황 맞춤 기관을 *하나의 배열*로 합쳐 동일 카드로 렌더.
  *  1388·117 처럼 양쪽에 겹치는 기관은 대표 전화번호 기준으로 matched 에서 중복 제거. */
-function HelpSection({ counseling = [], matched = [] }) {
+// ver.3 P3 — 역할·상황 기반 relevance 점수로 상위 4개만 강조 표시, 나머지는 "더보기".
+//  - 상황 맞춤(matched: rankResources 가 이미 역할·유형 필터링)을 우선.
+//  - 역할별 힌트 단어가 기관 설명·태그에 들어가면 가점 (G→관계회복, V→신고·보호 등).
+const HELP_ROLE_HINTS = {
+  V: ['신고', '피해', '보호', '위기', '상담'],
+  G: ['관계회복', '전담조사관', '자체해결', '법률', '전문', '구조'],
+  B: ['관계회복', '전담조사관', '상담', '자체해결'],
+  W: ['익명', '채팅', '신고', '상담'],
+  P: ['대면', '지역', '학교', '전문', '법률', '구조'],
+  U: [],
+};
+
+function HelpSection({ counseling = [], matched = [], role }) {
+  const [expanded, setExpanded] = useState(false);
   const primaryNum = (phone) => (String(phone).match(/^[\d-]+/) || [''])[0].replace(/\D/g, '');
   const counselNums = new Set(counseling.map(r => primaryNum(r.phone)).filter(Boolean));
-  // counseling 먼저, 그다음 상황 맞춤(matched). 겹치는 번호는 matched 에서 제거.
+  const hints = HELP_ROLE_HINTS[role] || [];
+
+  const scoreItem = (raw, source, idx) => {
+    // 상황 맞춤(matched) 은 이미 역할·유형 순으로 정렬돼 들어오므로 기본 가중 + 순위 보존.
+    let s = source === 'matched' ? 2.5 - idx * 0.15 : 0.8;
+    const txt = `${raw.name || ''} ${raw.role || raw.description || ''} ${(raw.tags || []).join(' ')}`;
+    for (const h of hints) if (txt.includes(h)) s += 0.7;
+    if (raw.is_24h || raw.is24h || raw.hours === '24시간') s += 0.3;
+    if (raw.is_emergency || raw.for_safety_branch) s += 0.2;
+    return s;
+  };
+
+  // counseling + 상황 맞춤(matched). 겹치는 번호는 matched 에서 제거. relevance 로 정렬.
   const list = [
-    ...counseling.map(r => normalizeResource(r, 'counseling')),
+    ...counseling.map((r, i) => ({ ...normalizeResource(r, 'counseling'), _rel: scoreItem(r, 'counseling', i) })),
     ...matched
       .filter(r => { const n = primaryNum(r.phone); return !(n && counselNums.has(n)); })
-      .map(r => normalizeResource(r, 'matched')),
-  ];
+      .map((r, i) => ({ ...normalizeResource(r, 'matched'), _rel: scoreItem(r, 'matched', i) })),
+  ].sort((a, b) => b._rel - a._rel);
 
   if (list.length === 0) return null;
+
+  const TOP = 4;
+  const top = list.slice(0, TOP);
+  const rest = list.slice(TOP);
 
   return (
     <div className="card-base p-7" style={{ background: C.cardWarm, border: `1px solid ${C.line}` }}>
@@ -1566,11 +1621,29 @@ function HelpSection({ counseling = [], matched = [] }) {
       </div>
       <p className="text-sm mb-5" style={{ color: C.inkSoft }}>
         혼자 결정하지 않으셔도 됩니다. 담임·상담 선생님이나 보호자 같은 가까운 어른부터 아래 기관까지, 함께할 수 있는 곳이 많아요.
-        각 기관의 *역할·운영 시간·익명성*을 참고해 편한 곳을 골라 보세요.
+        지금 상황에 가장 도움이 될 만한 곳을 <strong style={{ color: C.amberDeep }}>먼저 추천</strong>해 드려요.
       </p>
       <div className="grid sm:grid-cols-2 gap-3">
-        {list.map(r => <ResourceCard key={r.key} r={r} />)}
+        {top.map(r => <ResourceCard key={r.key} r={r} highlight />)}
       </div>
+      {rest.length > 0 && (
+        <>
+          {expanded && (
+            <div className="grid sm:grid-cols-2 gap-3 mt-3 anim-fade-in">
+              {rest.map(r => <ResourceCard key={r.key} r={r} />)}
+            </div>
+          )}
+          <div className="mt-4 text-center">
+            <button onClick={() => setExpanded(!expanded)} className="btn-ghost" style={{
+              padding: '10px 24px', background: C.card, borderColor: C.line,
+            }}>
+              {expanded
+                ? <>접기 <ChevronUp size={15} /></>
+                : <>다른 기관 더 보기 ({rest.length}곳) <ChevronDown size={15} /></>}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1642,7 +1715,7 @@ function ClassificationDebugPanel({ data, onUpdate }) {
                 </div>
               </div>
               <div className="mb-3">
-                <label className="block font-semibold mb-2" style={{ color: C.inkMute }}>너의 입장</label>
+                <label className="block font-semibold mb-2" style={{ color: C.inkMute }}>현재 입장</label>
                 <div className="flex flex-wrap gap-1">
                   {Object.entries(ROLE_LABELS).map(([k, v]) => (
                     <button key={k} onClick={() => setRole(k)} style={{
@@ -1686,7 +1759,7 @@ function ClassificationDebugPanel({ data, onUpdate }) {
   );
 }
 
-function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
+function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
   const [selectedCase, setSelectedCase] = useState(null);
   const [sortMode, setSortMode] = useState('relevance'); // 'relevance' | 'recent'
   const [expanded, setExpanded] = useState(false);
@@ -1728,15 +1801,51 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
 
   // W1.5 — 두루 검토 결정: 피해자(V) 포함 전 역할 *따뜻한 존댓말 (해요체)* 로 통일.
   // 따뜻함은 어휘·문장 구성으로 유지하고, 종결어미는 "~해요/~예요" 위주.
+  // ver.3 — 역할별 멘트 차별화: headerDesc·섹션 제목을 role 에 맞춰 다르게.
+  const role = data.classification.role;
+  const ROLE_COPY = {
+    V: {
+      headerDesc: '당신의 상황을 보호하기 위해, 공개 판례를 분석해 받을 수 있는 보호와 권리를 정리해 봤어요. 잘못은 당신에게 있지 않아요. 혼자 결정하지 않으셔도 됩니다 — 담임·상담 선생님이나 보호자 중 한 분과 함께 보세요.',
+      sectionFriendly: '당신의 상황을 정리해 봤어요',
+    },
+    G: {
+      headerDesc: '이 상황을 바로잡기 위해, 공개 판례를 바탕으로 앞으로의 과정과 회복의 길을 정리해 봤어요. 혼자 짐 지지 마세요 — 어른과 함께 책임지고 회복해 가는 과정이에요.',
+      sectionFriendly: '지금 상황을 바로잡기 위한 안내예요',
+    },
+    B: {
+      headerDesc: '양쪽 입장이 함께 얽힌 상황으로 보여요. 어느 한쪽으로 단정하지 않고, 자체해결·관계회복으로 풀어갈 수 있는 길까지 함께 정리해 봤어요. 어른과 함께 보시면 좋아요.',
+      sectionFriendly: '양쪽 상황을 균형 있게 정리해 봤어요',
+    },
+    W: {
+      headerDesc: '목격한 상황을 차분히 정리해 봤어요. 목격자로서 도울 수 있는 일과 스스로 보호받는 방법을 함께 안내해 드려요. 선생님 같은 어른과 상의해 보세요.',
+      sectionFriendly: '목격한 상황을 정리해 봤어요',
+    },
+    P: {
+      headerDesc: '자녀를 지원하기 위해, 보호자로서 지금 할 수 있는 절차와 준비를 공개 판례를 바탕으로 정리해 봤어요. 학교·상담 선생님과 함께 진행하시길 권해 드려요.',
+      sectionFriendly: '보호자로서 챙기실 부분을 정리해 봤어요',
+    },
+    U: {
+      headerDesc: '아래 내용은 공개 판례를 분석해 자동으로 정리한 안내예요. 혼자 결정하지 않으셔도 됩니다. 담임 선생님, 상담 선생님, 보호자 중 한 분과 상의해 보세요.',
+      sectionFriendly: '상황에 맞춰 정리해 봤어요',
+    },
+  };
+  const roleCopy = ROLE_COPY[role] || ROLE_COPY.U;
   const COPY = {
     headerTitle: (
       <>현재 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보여요</>
     ),
-    headerDesc:
-      '아래 내용은 공개 판례를 분석해 자동으로 정리한 안내예요. 혼자 결정하지 않으셔도 됩니다. 담임 선생님, 상담 선생님, 보호자 중 한 분과 상의해 보세요.',
-    sectionFriendly: '상황에 맞춰 정리해 봤어요',
+    headerDesc: roleCopy.headerDesc,
+    sectionFriendly: roleCopy.sectionFriendly,
     sectionCases: '비슷한 사례를 찾았어요',
   };
+
+  // ver.3 P2-1 — 나이 활용: 미성년/성인에 따라 진행 안내 분기.
+  // age_band 미입력 시 안내 생략(추정 금지). '18세 이상' 만 성인으로 처리.
+  const ageNote = !data.age_band
+    ? null
+    : data.age_band === '18세 이상'
+      ? { kind: 'adult', text: '만 18세 이상은 혼자서도 절차를 진행하실 수 있어요. 그래도 상담 선생님이나 두루 공익법센터와 함께 상의하시면 더 든든해요.' }
+      : { kind: 'minor', text: '아직 미성년이라, 보호자나 학교 선생님과 함께 진행하시길 권해 드려요. 혼자 결정하지 않으셔도 됩니다.' };
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -1758,6 +1867,17 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
           <p className="leading-relaxed max-w-2xl text-sm" style={{ color: C.inkSoft }}>
             {COPY.headerDesc}
           </p>
+          {ageNote && (
+            <div className="mt-4 flex items-start gap-2.5" style={{
+              background: C.card, border: `1px solid ${ageNote.kind === 'minor' ? C.amber : C.lineSoft}`,
+              borderRadius: 12, padding: '12px 14px', maxWidth: '42rem',
+            }}>
+              {ageNote.kind === 'minor'
+                ? <Shield size={16} color={C.amberDeep} style={{ flexShrink: 0, marginTop: 1 }} />
+                : <Check size={16} color={C.accent} style={{ flexShrink: 0, marginTop: 1 }} />}
+              <span className="text-sm leading-relaxed" style={{ color: C.inkSoft }}>{ageNote.text}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1800,11 +1920,6 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
           </div>
         );
       })()}
-
-      {/* 디버그 패널 */}
-      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.03s' }}>
-        <ClassificationDebugPanel data={data} onUpdate={onClassificationUpdate} />
-      </div>
 
       {/* 절차 단계 */}
       <div className="anim-fade-up mb-6" style={{ animationDelay: '0.05s' }}>
@@ -1895,7 +2010,12 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
 
       {/* W5.1 — 도움 기관 안내 통합. 상담 상수(배지·홈페이지) + 상황 맞춤 기관을 한 섹션으로. */}
       <div className="anim-fade-up mb-8" style={{ animationDelay: '0.28s' }}>
-        <HelpSection counseling={COUNSELING_RESOURCES} matched={matchedResources} />
+        <HelpSection counseling={COUNSELING_RESOURCES} matched={matchedResources} role={data.classification.role} />
+      </div>
+
+      {/* 디버그 패널 — 분류 결과 자세히 보기·수정. 본문(내 상황→앞으로→판례) 아래로 배치. */}
+      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.3s' }}>
+        <ClassificationDebugPanel data={data} onUpdate={onClassificationUpdate} />
       </div>
 
       {/* 면책 */}
@@ -1910,7 +2030,7 @@ function StepResults({ data, onReset, onNewDemo, onClassificationUpdate }) {
 
       <div className="flex flex-wrap gap-3 justify-center mb-12">
         <button onClick={onReset} className="btn-ghost"><RotateCcw size={15} /> 다시 시작하기</button>
-        <button onClick={onNewDemo} className="btn-primary"><PlayCircle size={16} /> 다른 데모 시도하기</button>
+        <button onClick={onNewExample} className="btn-primary"><PlayCircle size={16} /> 다른 예시 보기</button>
       </div>
 
       <footer className="pt-8 text-center" style={{ borderTop: `1px solid ${C.lineSoft}` }}>
@@ -1970,6 +2090,7 @@ export default function App() {
       const meta = {
         role: data.classification?.role,
         age: data.age_band,
+        gender: data.gender,
         school_level: data.school_level,
       };
       const result = await callSuggestKeywords({ text: data.user_text, meta });
@@ -1986,7 +2107,7 @@ export default function App() {
       }));
     })();
     return () => { aborted = true; };
-  }, [step, data.user_text, data.keyword_status, data.classification?.role, data.age_band, data.school_level]);
+  }, [step, data.user_text, data.keyword_status, data.classification?.role, data.age_band, data.gender, data.school_level]);
 
   // step 4 (StepLoading) 진입 시 /api/classify 호출. 선택 키워드를 meta 에 함께 전달.
   useEffect(() => {
@@ -1997,6 +2118,7 @@ export default function App() {
       const meta = {
         role: data.classification?.role,
         age: data.age_band,
+        gender: data.gender,
         school_level: data.school_level,
         // 선택한 키워드는 *키 + label* 둘 다 전달 — LLM이 의도 파악에 활용
         selected_keywords: (data.selected_keywords ?? []).map((k) => {
@@ -2017,9 +2139,9 @@ export default function App() {
       setStep(5);
     })();
     return () => { aborted = true; };
-  }, [step, data.user_text, data.classification?.role, data.age_band, data.school_level, data.selected_keywords, data.keyword_suggestions]);
+  }, [step, data.user_text, data.classification?.role, data.age_band, data.gender, data.school_level, data.selected_keywords, data.keyword_suggestions]);
 
-  const loadDemo = (persona) => {
+  const loadExample = (persona) => {
     reset();
     setData(d => ({ ...d, gender: persona.gender, age_band: persona.age_band, user_text: persona.text }));
     setStep(2); // Skip to situation, with data prefilled.
@@ -2080,7 +2202,7 @@ export default function App() {
       {step > 0 && step < 5 && <ProgressBar step={step} total={4} />}
 
       <main>
-        {step === 0 && <Landing onStart={() => setStep(1)} onDemo={loadDemo} />}
+        {step === 0 && <Landing onStart={() => setStep(1)} onExample={loadExample} />}
         {step === 1 && <StepInfo data={data} onChange={setData} onNext={() => setStep(2)} onBack={() => setStep(0)} />}
         {step === 2 && <StepSituation data={data} onChange={setData} onNext={handleSituationNext} onBack={() => setStep(1)} />}
         {step === 3 && data.classification && (
@@ -2094,7 +2216,7 @@ export default function App() {
           />
         )}
         {step === 4 && <StepLoading status={loadingStatus} />}
-        {step === 5 && <StepResults data={data} onReset={reset} onNewDemo={() => setStep(0)} onClassificationUpdate={handleClassificationUpdate} />}
+        {step === 5 && <StepResults data={data} onReset={reset} onNewExample={reset} onClassificationUpdate={handleClassificationUpdate} />}
       </main>
     </div>
   );

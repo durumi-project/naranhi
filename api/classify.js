@@ -53,6 +53,7 @@ function buildUserMessage(text, meta) {
   const lines = ["[메타]"];
   if (meta?.role) lines.push(`역할: ${meta.role}`);
   if (meta?.age) lines.push(`나이: ${meta.age}`);
+  if (meta?.gender) lines.push(`성별: ${meta.gender}`);
   if (meta?.school_level) lines.push(`학교급: ${meta.school_level}`);
   if (lines.length === 1) lines.push("(메타 없음)");
   lines.push("", "[상황]", text);
