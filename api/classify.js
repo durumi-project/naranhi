@@ -87,6 +87,18 @@ function validateResponse(parsed) {
   if (typeof parsed.confidence !== "number" || parsed.confidence < 0 || parsed.confidence > 1) {
     return { ok: false, reason: "confidence_out_of_range" };
   }
+  // ver.3 — analysis 는 선택. 있으면 객체 + 문자열 필드만 허용(없으면 통과 → UI 폴백).
+  if (parsed.analysis !== undefined && parsed.analysis !== null) {
+    if (typeof parsed.analysis !== "object" || Array.isArray(parsed.analysis)) {
+      return { ok: false, reason: "analysis_not_object" };
+    }
+    for (const k of ["legal_nature", "evidence", "strategy"]) {
+      const v = parsed.analysis[k];
+      if (v !== undefined && v !== null && typeof v !== "string") {
+        return { ok: false, reason: `analysis_${k}_not_string` };
+      }
+    }
+  }
   return { ok: true };
 }
 
@@ -103,7 +115,8 @@ function buildFallbackResponse(reason) {
 async function callClaude(client, userContent) {
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 800,
+    // ver.3 — analysis(법적/증거/전략) 필드가 추가돼 출력이 길어질 수 있어 상향(잘림 방지).
+    max_tokens: 1300,
     system: buildCachedSystemBlocks(),
     messages: [{ role: "user", content: userContent }],
   });

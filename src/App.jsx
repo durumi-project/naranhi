@@ -423,6 +423,25 @@ function roParticle(word) {
   return jong === 0 || jong === 8 ? '로' : '으로';
 }
 
+/* ver.3 — 결과 화면 탭. 안전 분석 필드(LLM)와 기존 검증 데이터를 결합해 항목별로 보여준다.
+ *  법적/증거/전략: LLM analysis(없으면 안전 폴백) / 절차: 기존 타임라인 / 처분: PUNISHMENT_GUIDE / 판례: 실제 사례. */
+const RESULT_TABS = [
+  { key: 'legal', label: '🏛️ 법적 성질' },
+  { key: 'evidence', label: '🔍 증거' },
+  { key: 'timeline', label: '📅 절차' },
+  { key: 'punishment', label: '⚖️ 처분 안내' },
+  { key: 'strategy', label: '💡 선택지·전략' },
+  { key: 'case', label: '📖 판례' },
+];
+
+// 증거 정리 폴백 체크리스트(유형별). LLM analysis.evidence 가 없을 때 표시.
+const EVIDENCE_CHECKLIST = [
+  { t: '신체 피해', d: '병원 진료기록·진단서, 다친 부위 사진(날짜가 보이게)' },
+  { t: '언어 피해', d: '오간 대화·녹음, 들은 사람(목격자) 메모' },
+  { t: '사이버', d: '단톡·SNS 스크린샷, 링크, 올라온 시각 — 삭제돼도 남아 있을 수 있어요' },
+  { t: '따돌림', d: '목격자 진술, 언제·어떻게 있었는지 시간순 메모' },
+];
+
 /* ============================================================================
    DESIGN TOKENS
    ============================================================================ */
@@ -1853,6 +1872,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
   const [selectedCase, setSelectedCase] = useState(null);
   const [sortMode, setSortMode] = useState('relevance'); // 'relevance' | 'recent'
   const [expanded, setExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState('legal'); // ver.3 — 결과 분석 탭
 
   // M2 — LLM 매칭 우선, 폴백은 기존 규칙 기반 matchCases.
   // 1) LLM 이 matched_case_ids 를 반환했으면 그것을 우선 위치에 배치 (1~3건).
@@ -1940,6 +1960,13 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
       ? { kind: 'adult', text: '만 18세 이상은 혼자서도 절차를 진행하실 수 있어요. 그래도 상담 선생님이나 두루 공익법센터와 함께 상의하시면 더 든든해요.' }
       : { kind: 'minor', text: '아직 미성년이라, 보호자나 학교 선생님과 함께 진행하시길 권해 드려요. 혼자 결정하지 않으셔도 됩니다.' };
 
+  // ver.3 — 안전 분석 필드(LLM). 없으면 비단정 폴백. 처분·절차·판례 탭은 검증 데이터로 채움.
+  const analysis = data.llm?.analysis || {};
+  const legalText = analysis.legal_nature
+    || `현재 ${typeLabelText}${roParticle(typeLabelText)} 보이는 상황이에요. 학교폭력 사안으로 다뤄질 수 있고, 내용에 따라 형사·민사 문제로 이어질 수도 있어요. 구체적인 법적 판단(죄 성립·책임 범위)은 단정하기 어려우니 변호사·두루 공익법센터와 함께 확인해 보세요.`;
+  const strategyText = analysis.strategy
+    || '보통 (1) 학교 절차 중심으로 가는 길, (2) 학교 절차와 함께 학교 밖(경찰 신고·법률 상담)을 병행하는 길이 있어요. 각 선택은 걸리는 시간, 마음의 부담, 받을 수 있는 도움의 범위가 달라요. 어느 쪽이 맞을지는 혼자 정하지 마시고 보호자·선생님·두루 공익법센터와 함께 정해 보세요.';
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* ver.3 — AI 기반 안내 주의 문구. 결과 화면 최상단 고정(모바일 동일 레이아웃). */}
@@ -2025,19 +2052,87 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
         );
       })()}
 
-      {/* 절차 단계 */}
-      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.05s' }}>
-        <ProcedureTimeline currentStage={data.stage} />
-      </div>
+      {/* ver.3 — 결과 분석 탭. '내 상황 분석'(위)은 항상 보이고, 세부는 탭으로 나눔.
+          절차·처분·판례 탭은 기존 검증 데이터(타임라인·PUNISHMENT_GUIDE·실제 사례)로 채움. */}
+      <div className="anim-fade-up mb-8" style={{ animationDelay: '0.05s' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, borderBottom: `2px solid ${C.lineSoft}`, flexWrap: 'wrap' }}>
+          {RESULT_TABS.map((tab) => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+              background: activeTab === tab.key ? C.accent : 'transparent',
+              color: activeTab === tab.key ? '#fff' : C.ink,
+              padding: '8px 14px', border: 'none', borderRadius: '8px 8px 0 0',
+              cursor: 'pointer', fontWeight: activeTab === tab.key ? 700 : 500, fontSize: 13,
+            }}>{tab.label}</button>
+          ))}
+        </div>
 
-      {/* W4-A1 — 앞으로 진행될 상황 (회의 결과 항목 6) */}
-      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.08s' }}>
-        <StageForecastSection stage={data.stage} />
-      </div>
+        {activeTab === 'legal' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-3"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>법적 성질</h3></div>
+            <p className="leading-relaxed text-sm" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{legalText}</p>
+            <p className="text-xs mt-3 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
+              <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
+              <span>죄 성립·형량은 단정할 수 없어요. 실제 판단은 심의위원회·법원·변호사의 몫이에요.</span>
+            </p>
+          </div>
+        )}
 
-      {/* 유사 사례 */}
-      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.1s' }}>
-        <div className="card-base p-7">
+        {activeTab === 'evidence' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-3"><Search size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>증거 정리</h3></div>
+            {analysis.evidence && (
+              <p className="leading-relaxed text-sm mb-4" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{analysis.evidence}</p>
+            )}
+            <div className="space-y-2">
+              {EVIDENCE_CHECKLIST.map((e) => (
+                <div key={e.t} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
+                  <div className="font-semibold text-sm mb-0.5" style={{ color: C.ink }}>{e.t}</div>
+                  <div className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{e.d}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs mt-3" style={{ color: C.inkMute }}>원본을 안전하게 보관해 두세요. 무엇부터 모을지는 어른·두루 공익법센터와 함께 정하면 좋아요.</p>
+          </div>
+        )}
+
+        {activeTab === 'timeline' && (
+          <div className="space-y-6 anim-fade-in">
+            <ProcedureTimeline currentStage={data.stage} />
+            <StageForecastSection stage={data.stage} />
+          </div>
+        )}
+
+        {activeTab === 'punishment' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-1"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분(조치)에는 어떤 것들이 있나요?</h3></div>
+            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>학교폭력대책심의위원회가 정할 수 있는 조치예요. 어떤 조치가 내려질지는 사실관계에 따라 심의위원회가 결정하므로, 여기서는 미리 예측하지 않아요.</p>
+            <div className="space-y-2">
+              {Object.entries(PUNISHMENT_GUIDE).map(([num, g]) => (
+                <div key={num} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <span className="chip text-[11px]" style={{ background: C.amber, color: '#fff', padding: '2px 9px' }}>{num}호</span>
+                    <span className="font-semibold text-sm" style={{ color: C.ink }}>{g.name}</span>
+                  </div>
+                  <div className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{g.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'strategy' && (
+          <div className="space-y-6 anim-fade-in">
+            <div className="card-base p-6">
+              <div className="flex items-center gap-2 mb-3"><Zap size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>선택지와 전략</h3></div>
+              <p className="leading-relaxed text-sm" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{strategyText}</p>
+              <p className="text-xs mt-3" style={{ color: C.inkMute }}>정답을 강요하지 않아요. 각 선택의 시간·마음의 부담·도움의 범위를 함께 견주어 보세요.</p>
+            </div>
+            <ChecklistSection docs={matchedDocs} />
+          </div>
+        )}
+
+        {activeTab === 'case' && (
+          <div className="card-base p-7 anim-fade-in">
           <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
             <div className="flex items-center gap-2"><Search size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>{COPY.sectionCases}</h3></div>
             <span className="chip text-xs" style={{ background: C.cardWarm, color: C.amberDeep, padding: '4px 12px' }}>
@@ -2098,12 +2193,8 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
               )}
             </>
           )}
-        </div>
-      </div>
-
-      {/* 서류 체크리스트 */}
-      <div className="anim-fade-up mb-6" style={{ animationDelay: '0.15s' }}>
-        <ChecklistSection docs={matchedDocs} />
+          </div>
+        )}
       </div>
 
       {/* 용어 + FAQ */}
