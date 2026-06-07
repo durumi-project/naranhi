@@ -1919,7 +1919,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
       sectionFriendly: '당신의 상황을 정리해 봤어요',
     },
     G: {
-      headerDesc: '이 상황을 바로잡기 위해, 공개 판례를 바탕으로 앞으로의 과정과 회복의 길을 정리해 봤어요. 혼자 짐 지지 마세요 — 어른과 함께 책임지고 회복해 가는 과정이에요.',
+      headerDesc: '이 상황을 바로잡기 위해, 공개 판례를 바탕으로 앞으로의 과정과 회복의 길을 정리해 봤어요. 어른과 함께라면 힘이 덜 들어요 — 혼자 결정하지 않으셔도 됩니다.',
       sectionFriendly: '지금 상황을 바로잡기 위한 안내예요',
     },
     B: {
