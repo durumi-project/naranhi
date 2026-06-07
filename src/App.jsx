@@ -411,6 +411,18 @@ function extractPunishments(...texts) {
   return [...found.entries()].map(([num, g]) => ({ num, ...g }));
 }
 
+/* ver.3 — 조사 '로/으로' 자동 선택.
+ *  받침이 없거나(모음 종결) ㄹ 받침이면 '로', 그 외 받침이면 '으로'.
+ *  예: 강요→강요로, 금품갈취→금품갈취로 / 신체폭력→신체폭력으로, 따돌림→따돌림으로, 복합형→복합형으로.
+ *  한글 음절이 아닌 끝글자는 기본값 '로'. */
+function roParticle(word) {
+  if (typeof word !== 'string' || word.length === 0) return '로';
+  const code = word.charCodeAt(word.length - 1);
+  if (code < 0xac00 || code > 0xd7a3) return '로';
+  const jong = (code - 0xac00) % 28; // 0 = 받침 없음, 8 = ㄹ
+  return jong === 0 || jong === 8 ? '로' : '으로';
+}
+
 /* ============================================================================
    DESIGN TOKENS
    ============================================================================ */
@@ -1913,7 +1925,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
   const typeLabelText = typeList.map((t) => TYPE_LABELS[t]).filter(Boolean).join(', ');
   const COPY = {
     headerTitle: (
-      <>현재 상황은 <span style={{ color: C.accent }}>{typeLabelText}</span>로 보여요</>
+      <>현재 상황은 <span style={{ color: C.accent }}>{typeLabelText}</span>{roParticle(typeLabelText)} 보여요</>
     ),
     headerDesc: roleCopy.headerDesc,
     sectionFriendly: roleCopy.sectionFriendly,
