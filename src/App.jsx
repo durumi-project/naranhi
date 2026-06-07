@@ -940,17 +940,26 @@ function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
   const ROLE_LABELS = { G: '신고를 받은 쪽 (가해자로 지목됨)', V: '신고를 한 쪽 (피해를 입었음)', B: '쌍방', W: '목격자', P: '보호자', U: '아직 잘 모르겠음' };
 
   const [editing, setEditing] = useState(false);
-  const [editType, setEditType] = useState(data.classification.type_main);
+  // ver.3 — 사건 유형은 복수 선택(체크박스). type_main_list 가 단일 진실의 원천.
+  const currentTypes = data.classification.type_main_list ?? [data.classification.type_main];
+  const [editTypes, setEditTypes] = useState(currentTypes);
   const [editRole, setEditRole] = useState(data.classification.role);
 
   useEffect(() => {
-    setEditType(data.classification.type_main);
+    setEditTypes(data.classification.type_main_list ?? [data.classification.type_main]);
     setEditRole(data.classification.role);
-  }, [data.classification.type_main, data.classification.role]);
+  }, [data.classification.type_main, data.classification.type_main_list, data.classification.role]);
 
-  const editChanged = editType !== data.classification.type_main || editRole !== data.classification.role;
+  // 복합형(MX)은 선택지에서 제외 — 대신 구체 유형을 여러 개 함께 고른다.
+  const TYPE_OPTIONS = Object.entries(TYPE_LABELS).filter(([k]) => k !== 'MX');
+  const toggleEditType = (k) =>
+    setEditTypes((prev) => (prev.includes(k) ? prev.filter((t) => t !== k) : [...prev, k]));
+  const sameTypes = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+  const editChanged =
+    editTypes.length >= 1 &&
+    (!sameTypes(editTypes, currentTypes) || editRole !== data.classification.role);
   const applyEdit = () => {
-    onUpdate({ type_main: editType, role: editRole });
+    onUpdate({ type_main_list: editTypes, role: editRole });
     setEditing(false);
   };
 
@@ -999,7 +1008,7 @@ function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div style={{ background: C.card, padding: 12, borderRadius: 10 }}>
                 <div className="text-xs mb-1" style={{ color: C.inkMute }}>사건 유형</div>
-                <div className="font-bold text-sm" style={{ color: C.ink }}>{TYPE_LABELS[data.classification.type_main]}</div>
+                <div className="font-bold text-sm" style={{ color: C.ink }}>{currentTypes.map((t) => TYPE_LABELS[t]).filter(Boolean).join(', ')}</div>
               </div>
               <div style={{ background: C.card, padding: 12, borderRadius: 10 }}>
                 <div className="text-xs mb-1" style={{ color: C.inkMute }}>현재 입장</div>
@@ -1022,19 +1031,29 @@ function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
         ) : (
           <div className="anim-fade-in">
             <div className="mb-3">
-              <label className="block text-xs font-semibold mb-2" style={{ color: C.inkMute }}>사건 유형</label>
+              <label className="block text-xs font-semibold mb-2" style={{ color: C.inkMute }}>
+                사건 유형 <span style={{ color: C.inkMute, fontWeight: 400 }}>· 해당되면 여러 개 선택해 주세요</span>
+              </label>
               <div className="flex flex-wrap gap-1.5">
-                {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                  <button key={k} onClick={() => setEditType(k)}
-                    style={{
-                      padding: '7px 11px', borderRadius: 9, fontSize: 12, fontWeight: 500,
-                      border: `1.5px solid ${editType === k ? C.accent : C.line}`,
-                      background: editType === k ? C.accent : C.card,
-                      color: editType === k ? 'white' : C.ink,
-                      cursor: 'pointer',
-                    }}>{v}</button>
-                ))}
+                {TYPE_OPTIONS.map(([k, v]) => {
+                  const on = editTypes.includes(k);
+                  return (
+                    <button key={k} onClick={() => toggleEditType(k)}
+                      style={{
+                        padding: '7px 11px', borderRadius: 9, fontSize: 12, fontWeight: 500,
+                        border: `1.5px solid ${on ? C.accent : C.line}`,
+                        background: on ? C.accent : C.card,
+                        color: on ? 'white' : C.ink,
+                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+                      }}>
+                      {on && <Check size={12} strokeWidth={3} />}{v}
+                    </button>
+                  );
+                })}
               </div>
+              {editTypes.length === 0 && (
+                <p className="text-[11px] mt-1.5" style={{ color: C.danger }}>한 개 이상 선택해 주세요.</p>
+              )}
             </div>
             <div className="mb-3">
               <label className="block text-xs font-semibold mb-2" style={{ color: C.inkMute }}>현재 입장</label>
@@ -1052,7 +1071,7 @@ function StepDetails({ data, tree, onChange, onUpdate, onNext, onBack }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { setEditing(false); setEditType(data.classification.type_main); setEditRole(data.classification.role); }}
+              <button onClick={() => { setEditing(false); setEditTypes(currentTypes); setEditRole(data.classification.role); }}
                 className="btn-ghost text-xs" style={{ flex: 1, justifyContent: 'center', padding: 8 }}>취소</button>
               <button onClick={applyEdit} disabled={!editChanged}
                 className="btn-primary text-xs" style={{ flex: 1, justifyContent: 'center', padding: 8, fontSize: 13 }}>수정 적용</button>
@@ -1889,9 +1908,12 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
     },
   };
   const roleCopy = ROLE_COPY[role] || ROLE_COPY.U;
+  // ver.3 — 복수 유형: type_main_list 를 라벨로 조합 ("언어폭력, 신체폭력").
+  const typeList = data.classification.type_main_list ?? [data.classification.type_main];
+  const typeLabelText = typeList.map((t) => TYPE_LABELS[t]).filter(Boolean).join(', ');
   const COPY = {
     headerTitle: (
-      <>현재 상황은 <span style={{ color: C.accent }}>{TYPE_LABELS[data.classification.type_main]}</span>로 보여요</>
+      <>현재 상황은 <span style={{ color: C.accent }}>{typeLabelText}</span>로 보여요</>
     ),
     headerDesc: roleCopy.headerDesc,
     sectionFriendly: roleCopy.sectionFriendly,
@@ -1908,6 +1930,17 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
+      {/* ver.3 — AI 기반 안내 주의 문구. 결과 화면 최상단 고정(모바일 동일 레이아웃). */}
+      <div className="anim-fade-in mb-5" style={{
+        background: C.cardWarm, border: `1.5px solid ${C.amber}`, borderRadius: 14,
+        padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start',
+      }}>
+        <AlertTriangle size={20} color={C.amberDeep} style={{ flexShrink: 0, marginTop: 1 }} />
+        <p style={{ color: C.ink, fontSize: 13, lineHeight: 1.6, margin: 0 }}>
+          <strong>AI 기반 안내입니다.</strong> 이 결과는 법률 자문을 대신하지 않습니다. 모든 사건은 구체적 사실관계에 따라 판단이 달라질 수 있어요. 중요한 결정 전에는 반드시 변호사와 상의해 주세요.
+        </p>
+      </div>
+
       {/* 헤더 */}
       <div className="anim-fade-up mb-6" style={{ background: `linear-gradient(135deg, ${C.cardWarm} 0%, ${C.bg} 100%)`, border: `1px solid ${C.line}`, borderRadius: 24, padding: '32px 28px', position: 'relative', overflow: 'hidden' }}>
         <div className="relative">
@@ -2179,6 +2212,9 @@ export default function App() {
         age: data.age_band,
         gender: data.gender,
         school_level: data.school_level,
+        // ver.3 — 복수 유형. primary 는 type_main, 전체 선택은 type_main_list.
+        type_main: data.classification?.type_main,
+        type_main_list: data.classification?.type_main_list,
         // 선택한 키워드는 *키 + label* 둘 다 전달 — LLM이 의도 파악에 활용
         selected_keywords: (data.selected_keywords ?? []).map((k) => {
           const found = (data.keyword_suggestions ?? FALLBACK_SUGGESTIONS).find((s) => s.key === k);
@@ -2198,7 +2234,7 @@ export default function App() {
       setStep(5);
     })();
     return () => { aborted = true; };
-  }, [step, data.user_text, data.classification?.role, data.age_band, data.gender, data.school_level, data.selected_keywords, data.keyword_suggestions]);
+  }, [step, data.user_text, data.classification?.role, data.classification?.type_main, data.classification?.type_main_list, data.age_band, data.gender, data.school_level, data.selected_keywords, data.keyword_suggestions]);
 
   const loadExample = (persona) => {
     reset();
@@ -2214,10 +2250,16 @@ export default function App() {
       return;
     }
     const levelInfo = inferSchoolLevel(data.age_band);
-    const fullCode = `SV-${cls.type_main}-${cls.role}-${cls.stage_signal}-${levelInfo.school_level}`;
+    // ver.3 — 복수 유형 지원: type_main_list 초기화. 복합형(MX)은 목록에서 제외하고
+    // primary(type_main)는 목록 첫 항목으로 유지(full_code·매칭은 primary 기준).
+    let typeList = [cls.type_main, ...(cls.subtypes || [])].filter((t) => t && t !== 'MX');
+    typeList = [...new Set(typeList)];
+    if (typeList.length === 0) typeList = [cls.type_main === 'MX' ? 'VB' : cls.type_main];
+    const primaryType = typeList[0];
+    const fullCode = `SV-${primaryType}-${cls.role}-${cls.stage_signal}-${levelInfo.school_level}`;
     setData(d => ({
       ...d,
-      classification: cls,
+      classification: { ...cls, type_main: primaryType, type_main_list: typeList },
       full_code: fullCode,
       school_level: levelInfo.school_level,
       stage: cls.stage_signal,
@@ -2244,11 +2286,16 @@ export default function App() {
   }
 
   // 분류 결과 수정 핸들러 (StepDetails 인라인 편집 + 결과 페이지 디버그 패널에서 모두 사용)
-  const handleClassificationUpdate = ({ type_main, role }) => {
+  const handleClassificationUpdate = ({ type_main, type_main_list, role }) => {
     const levelInfo = inferSchoolLevel(data.age_band);
     setData(d => {
-      const newCls = { ...d.classification, type_main, role };
-      const newCode = `SV-${type_main}-${role}-${newCls.stage_signal}-${levelInfo.school_level}`;
+      // type_main_list(복수) 우선, 없으면 단일 type_main, 둘 다 없으면 기존값 유지.
+      const list = (type_main_list && type_main_list.length)
+        ? type_main_list
+        : (type_main ? [type_main] : (d.classification.type_main_list ?? [d.classification.type_main]));
+      const primaryType = list[0];
+      const newCls = { ...d.classification, type_main: primaryType, type_main_list: list, role };
+      const newCode = `SV-${primaryType}-${role}-${newCls.stage_signal}-${levelInfo.school_level}`;
       return { ...d, classification: newCls, full_code: newCode };
     });
   };

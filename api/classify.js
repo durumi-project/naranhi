@@ -55,6 +55,12 @@ function buildUserMessage(text, meta) {
   if (meta?.age) lines.push(`나이: ${meta.age}`);
   if (meta?.gender) lines.push(`성별: ${meta.gender}`);
   if (meta?.school_level) lines.push(`학교급: ${meta.school_level}`);
+  // ver.3 — 사용자가 고른 복수 유형(언어+신체 등). 단일 type_main 은 primary.
+  if (Array.isArray(meta?.type_main_list) && meta.type_main_list.length) {
+    lines.push(`사건 유형(복수 선택): ${meta.type_main_list.join(", ")}`);
+  } else if (meta?.type_main) {
+    lines.push(`사건 유형: ${meta.type_main}`);
+  }
   if (lines.length === 1) lines.push("(메타 없음)");
   lines.push("", "[상황]", text);
   return lines.join("\n");
