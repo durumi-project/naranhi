@@ -2170,6 +2170,12 @@ export default function App() {
     setStep(0);
   };
 
+  // ver.3 — step 전환마다 화면 맨 위로 스크롤. 모바일(width<768px)에서 이전 화면의
+  // 스크롤 위치가 남아 결과 최상단(주의 문구)이 가려지던 문제 해결. 데스크톱·모바일 동일.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
   // step 3 (StepDetails) 진입 시 /api/suggestKeywords 비동기 호출.
   // 응답이 늦더라도 폴백 chip 이 이미 보이는 상태라 UX는 차단되지 않는다.
   useEffect(() => {
