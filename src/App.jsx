@@ -424,22 +424,14 @@ function roParticle(word) {
 }
 
 /* ver.3 — 결과 화면 탭. 안전 분석 필드(LLM)와 기존 검증 데이터를 결합해 항목별로 보여준다.
- *  법적/증거/전략: LLM analysis(없으면 안전 폴백) / 절차: 기존 타임라인 / 처분: PUNISHMENT_GUIDE / 판례: 실제 사례. */
+ *  법적/전략: LLM analysis(없으면 안전 폴백) / 절차: 기존 타임라인 / 처분: PUNISHMENT_GUIDE / 판례: 실제 사례.
+ *  증거 탭은 제거하고 상황 맞춤 증거(required_evidence)는 [선택지·전략] 탭에 통합. */
 const RESULT_TABS = [
   { key: 'legal', label: '🏛️ 법적 성질' },
-  { key: 'evidence', label: '🔍 증거' },
   { key: 'timeline', label: '📅 절차' },
   { key: 'punishment', label: '⚖️ 처분 안내' },
   { key: 'strategy', label: '💡 선택지·전략' },
   { key: 'case', label: '📖 판례' },
-];
-
-// 증거 정리 폴백 체크리스트(유형별). LLM analysis.evidence 가 없을 때 표시.
-const EVIDENCE_CHECKLIST = [
-  { t: '신체 피해', d: '병원 진료기록·진단서, 다친 부위 사진(날짜가 보이게)' },
-  { t: '언어 피해', d: '오간 대화·녹음, 들은 사람(목격자) 메모' },
-  { t: '사이버', d: '단톡·SNS 스크린샷, 링크, 올라온 시각 — 삭제돼도 남아 있을 수 있어요' },
-  { t: '따돌림', d: '목격자 진술, 언제·어떻게 있었는지 시간순 메모' },
 ];
 
 /* ============================================================================
@@ -2081,51 +2073,6 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           </div>
         )}
 
-        {activeTab === 'evidence' && (
-          <div className="card-base p-6 anim-fade-in">
-            <div className="flex items-center gap-2 mb-3">
-              <Search size={18} color={C.accent} />
-              <h3 className="font-semibold text-lg" style={{ color: C.ink }}>{reqEvidence.length > 0 ? '🎯 상황에 맞춘 증거 정리' : '증거 정리'}</h3>
-            </div>
-            {analysis.evidence && (
-              <p className="leading-relaxed text-sm mb-4" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{analysis.evidence}</p>
-            )}
-            {reqEvidence.length > 0 ? (
-              <div>
-                {reqEvidence.map((item, idx) => (
-                  <div key={idx} className="pb-4 mb-4" style={{ borderBottom: idx < reqEvidence.length - 1 ? `1px solid ${C.lineSoft}` : 'none' }}>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <div style={{ background: C.accent, color: '#fff', width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
-                        {item.priority ?? idx + 1}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {item.type && <h4 className="font-bold text-sm mb-1" style={{ color: C.ink }}>{item.type}</h4>}
-                        {item.description && <p className="text-sm mb-2" style={{ color: C.inkSoft }}>{item.description}</p>}
-                        {item.why && <p className="text-sm mb-2" style={{ color: C.ink, fontWeight: 500 }}>💡 {item.why}</p>}
-                        {item.specific_action && (
-                          <p className="text-xs" style={{ background: C.cardWarm, padding: '8px 12px', borderRadius: 8, color: C.amberDeep, fontWeight: 500 }}>
-                            ✅ {item.specific_action}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {EVIDENCE_CHECKLIST.map((e) => (
-                  <div key={e.t} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
-                    <div className="font-semibold text-sm mb-0.5" style={{ color: C.ink }}>{e.t}</div>
-                    <div className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{e.d}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <p className="text-xs mt-3" style={{ color: C.inkMute }}>원본을 안전하게 보관해 두세요. 무엇부터 모을지는 어른·두루 공익법센터와 함께 정하면 좋아요.</p>
-          </div>
-        )}
-
         {activeTab === 'timeline' && (
           <div className="space-y-6 anim-fade-in">
             <ProcedureTimeline currentStage={data.stage} />
@@ -2157,6 +2104,28 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
               <div className="flex items-center gap-2 mb-3"><Zap size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>선택지와 전략</h3></div>
               <p className="leading-relaxed text-sm" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{strategyText}</p>
               <p className="text-xs mt-3" style={{ color: C.inkMute }}>정답을 강요하지 않아요. 각 선택의 시간·마음의 부담·도움의 범위를 함께 견주어 보세요.</p>
+
+              {/* ver.3 — 증거 탭을 선택지·전략에 통합. 상황 맞춤 증거(LLM)가 있으면 함께 표시. */}
+              {reqEvidence.length > 0 && (
+                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${C.lineSoft}` }}>
+                  <h4 className="font-semibold text-sm mb-4" style={{ color: C.ink }}>📋 상황에 맞춘 증거·서류</h4>
+                  {reqEvidence.map((item, idx) => (
+                    <div key={idx} className="mb-4 pb-4" style={{ borderLeft: `3px solid ${C.accent}`, paddingLeft: 12, borderBottom: idx < reqEvidence.length - 1 ? `1px solid ${C.lineSoft}` : 'none' }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+                        <span style={{ background: C.accent, color: '#fff', width: 26, height: 26, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{item.priority ?? idx + 1}</span>
+                        <div style={{ minWidth: 0 }}>
+                          {item.type && <h5 className="font-bold text-sm" style={{ color: C.ink }}>{item.type}</h5>}
+                          {item.description && <p className="text-sm" style={{ color: C.inkSoft }}>{item.description}</p>}
+                        </div>
+                      </div>
+                      {item.why && <p className="text-sm mb-2" style={{ color: C.ink }}>💡 <span style={{ fontWeight: 500 }}>{item.why}</span></p>}
+                      {item.specific_action && (
+                        <p className="text-xs" style={{ background: C.cardWarm, padding: '8px 12px', borderRadius: 6, color: C.amberDeep, fontWeight: 500 }}>✅ {item.specific_action}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <ChecklistSection docs={matchedDocs} />
           </div>

@@ -291,7 +291,6 @@ const RESPONSE_SCHEMA = `[응답 — JSON 한 객체만, 자유 텍스트 일체
   "confidence": number,                   // 0~1, 매칭·분류 자체 신뢰도.
   "analysis": {                           // (선택) 결과 화면 탭에 쓰는 *비단정* 구조 분석. [PRO]·[금지] 규칙 엄수.
     "legal_nature": "string",             // 법적 성질 개괄. 조문·형량·죄 성립 단정 금지. "형사로도 다뤄질 수 있어요" 수준.
-    "evidence": "string",                 // 증거 정리 한 줄 요약(선택). required_evidence 가 있으면 그 도입 한 문장.
     "strategy": "string",                 // 선택지·전략 2~3가지의 장단점. *확률·금액·확정 처분 금지*.
     "required_evidence": [                // (선택) 이 상황에 맞춘 우선순위 증거 *2~3개* (그 이상 금지).
       {
@@ -307,7 +306,8 @@ const RESPONSE_SCHEMA = `[응답 — JSON 한 객체만, 자유 텍스트 일체
 
 [증거 수집 맞춤화 — analysis.required_evidence]
 type_main(복수 가능)·selected_keywords·age_band·기간에 따라 *상황마다 다른* 증거를 우선순위 *2~3개*로 제시합니다.
-*고정된 틀을 그대로 복붙하지 말고*, 아래 분기를 참고해 그 사용자에게 맞게 고릅니다. 각 필드(type·description·why·
+*고정된 틀(신체+언어+사이버+따돌림 전부)을 그대로 복붙하지 말고*, *해당 사용자의 type_main 에만 맞춰* 고릅니다
+(관련 없는 유형의 증거 — 예: 신체 사건이 아닌데 진단서 — 는 넣지 않음). 아래 분기를 참고하되 상황에 맞게 조정합니다. 각 필드(type·description·why·
 specific_action)는 *각각 한 구절(짧게)*. analysis 의 legal_nature·strategy 도 *각 1~2문장*으로 간결히 — 응답이 너무
 길어지면 잘릴 수 있으니 핵심만 담습니다.
 
