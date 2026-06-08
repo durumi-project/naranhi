@@ -1216,7 +1216,7 @@ function StepLoading({ status }) {
       <h2 className="font-display text-3xl font-bold mb-3" style={{ color: C.ink }}>분석하고 있어요</h2>
       <p style={{ color: C.inkSoft, marginBottom: 8 }}>잠깐만 기다려 주세요.</p>
       {status === 'llm_pending' && (
-        <p style={{ color: C.inkMute, fontSize: 12, marginBottom: 32 }}>응답이 도착하는 데 보통 3~10초 정도 걸려요.</p>
+        <p style={{ color: C.inkMute, fontSize: 12, marginBottom: 32 }}>응답이 도착하는 데 보통 5~15초 정도 걸려요. 맞춤 분석을 정리하는 중이에요.</p>
       )}
       {status === 'llm_error' && (
         <p style={{ color: C.amberDeep, fontSize: 13, marginBottom: 32 }}>응답이 늦어지고 있어요. 잠시 후 결과 화면으로 넘어가요.</p>
@@ -1966,6 +1966,10 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
     || `현재 ${typeLabelText}${roParticle(typeLabelText)} 보이는 상황이에요. 학교폭력 사안으로 다뤄질 수 있고, 내용에 따라 형사·민사 문제로 이어질 수도 있어요. 구체적인 법적 판단(죄 성립·책임 범위)은 단정하기 어려우니 변호사·두루 공익법센터와 함께 확인해 보세요.`;
   const strategyText = analysis.strategy
     || '보통 (1) 학교 절차 중심으로 가는 길, (2) 학교 절차와 함께 학교 밖(경찰 신고·법률 상담)을 병행하는 길이 있어요. 각 선택은 걸리는 시간, 마음의 부담, 받을 수 있는 도움의 범위가 달라요. 어느 쪽이 맞을지는 혼자 정하지 마시고 보호자·선생님·두루 공익법센터와 함께 정해 보세요.';
+  // ver.3 — 상황 맞춤 우선순위 증거(LLM). 없으면 정적 체크리스트로 폴백.
+  const reqEvidence = Array.isArray(analysis.required_evidence)
+    ? analysis.required_evidence.slice().sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99))
+    : [];
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -2079,18 +2083,45 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
 
         {activeTab === 'evidence' && (
           <div className="card-base p-6 anim-fade-in">
-            <div className="flex items-center gap-2 mb-3"><Search size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>증거 정리</h3></div>
+            <div className="flex items-center gap-2 mb-3">
+              <Search size={18} color={C.accent} />
+              <h3 className="font-semibold text-lg" style={{ color: C.ink }}>{reqEvidence.length > 0 ? '🎯 상황에 맞춘 증거 정리' : '증거 정리'}</h3>
+            </div>
             {analysis.evidence && (
               <p className="leading-relaxed text-sm mb-4" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{analysis.evidence}</p>
             )}
-            <div className="space-y-2">
-              {EVIDENCE_CHECKLIST.map((e) => (
-                <div key={e.t} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
-                  <div className="font-semibold text-sm mb-0.5" style={{ color: C.ink }}>{e.t}</div>
-                  <div className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{e.d}</div>
-                </div>
-              ))}
-            </div>
+            {reqEvidence.length > 0 ? (
+              <div>
+                {reqEvidence.map((item, idx) => (
+                  <div key={idx} className="pb-4 mb-4" style={{ borderBottom: idx < reqEvidence.length - 1 ? `1px solid ${C.lineSoft}` : 'none' }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <div style={{ background: C.accent, color: '#fff', width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+                        {item.priority ?? idx + 1}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {item.type && <h4 className="font-bold text-sm mb-1" style={{ color: C.ink }}>{item.type}</h4>}
+                        {item.description && <p className="text-sm mb-2" style={{ color: C.inkSoft }}>{item.description}</p>}
+                        {item.why && <p className="text-sm mb-2" style={{ color: C.ink, fontWeight: 500 }}>💡 {item.why}</p>}
+                        {item.specific_action && (
+                          <p className="text-xs" style={{ background: C.cardWarm, padding: '8px 12px', borderRadius: 8, color: C.amberDeep, fontWeight: 500 }}>
+                            ✅ {item.specific_action}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {EVIDENCE_CHECKLIST.map((e) => (
+                  <div key={e.t} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
+                    <div className="font-semibold text-sm mb-0.5" style={{ color: C.ink }}>{e.t}</div>
+                    <div className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{e.d}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             <p className="text-xs mt-3" style={{ color: C.inkMute }}>원본을 안전하게 보관해 두세요. 무엇부터 모을지는 어른·두루 공익법센터와 함께 정하면 좋아요.</p>
           </div>
         )}

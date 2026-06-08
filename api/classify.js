@@ -98,6 +98,26 @@ function validateResponse(parsed) {
         return { ok: false, reason: `analysis_${k}_not_string` };
       }
     }
+    // required_evidence 는 선택. 있으면 배열(≤6) + 각 항목 객체(문자열/숫자 필드)만 허용.
+    const re = parsed.analysis.required_evidence;
+    if (re !== undefined && re !== null) {
+      if (!Array.isArray(re) || re.length > 6) {
+        return { ok: false, reason: "required_evidence_invalid" };
+      }
+      for (const item of re) {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          return { ok: false, reason: "required_evidence_item_not_object" };
+        }
+        if (item.priority !== undefined && typeof item.priority !== "number") {
+          return { ok: false, reason: "required_evidence_priority_not_number" };
+        }
+        for (const f of ["type", "description", "why", "specific_action"]) {
+          if (item[f] !== undefined && item[f] !== null && typeof item[f] !== "string") {
+            return { ok: false, reason: `required_evidence_${f}_not_string` };
+          }
+        }
+      }
+    }
   }
   return { ok: true };
 }
@@ -115,8 +135,9 @@ function buildFallbackResponse(reason) {
 async function callClaude(client, userContent) {
   const response = await client.messages.create({
     model: MODEL,
-    // ver.3 — analysis(법적/증거/전략) 필드가 추가돼 출력이 길어질 수 있어 상향(잘림 방지).
-    max_tokens: 1300,
+    // ver.3 — analysis(법적/증거/전략 + required_evidence 목록)로 출력이 길어질 수 있어 상향(잘림 방지).
+    // 프롬프트에서 항목 수·길이를 줄였지만, 잘림 시 parse_error→폴백(matched 손실)이 되므로 헤드룸 확보.
+    max_tokens: 2200,
     system: buildCachedSystemBlocks(),
     messages: [{ role: "user", content: userContent }],
   });
