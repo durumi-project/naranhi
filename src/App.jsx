@@ -2232,7 +2232,6 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
       </div>
 
       <footer className="pt-8 text-center" style={{ borderTop: `1px solid ${C.lineSoft}` }}>
-        <div className="font-display text-base font-bold mb-2" style={{ color: C.ink }}>나란히 ver.3</div>
         <p className="text-xs" style={{ color: C.inkMute }}>두루미팀 · 두루 공익법센터 협력 · 테크포임팩트 캠퍼스<br />
           판례 {CASES.length}건 · 서류 {DOCUMENTS.length}건 · 용어 {LEGAL_TERMS.length}건 · FAQ {FAQS.length}건 · 기관 {RESOURCES.length}건 · 상담 {COUNSELING_RESOURCES.length}곳
         </p>
