@@ -539,12 +539,13 @@ function Header({ onHome, showBack, onBack }) {
     <header style={{ position: 'sticky', top: 0, zIndex: 50, background: `${C.bg}f0`, backdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.lineSoft}` }}>
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <button onClick={onHome} className="flex items-center gap-2.5" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.accent, display: 'grid', placeItems: 'center' }}>
-            <Scale size={18} color="white" strokeWidth={2.2} />
-          </div>
-          <div className="flex flex-col items-start leading-tight">
-            <img src="/durumi_logo.jpeg" alt="나란히" style={{ height: '36px', width: 'auto' }} />
-          </div>
+          <img src="/durumi_logo.jpeg" alt="나란히"
+            style={{
+              height: '40px',
+              width: 'auto',
+              borderRadius: '8px'
+            }}
+          />
         </button>
         <div className="flex items-center gap-2">
           {showBack && <button onClick={onBack} className="btn-ghost text-sm"><ChevronLeft size={16} /> 이전</button>}
