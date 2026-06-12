@@ -616,7 +616,7 @@ function Landing({ onStart, onExample }) {
             const title = derivePersonaTitle(p);
             return (
               <button key={p.id} onClick={() => onExample(p)} className="anim-fade-up" style={{
-                width: '100%', textAlign: 'left', padding: 24, minHeight: 120,
+                width: '100%', textAlign: 'left', padding: 16, minHeight: 100,
                 background: C.cardWarm, border: `2px solid ${C.amber}`, borderRadius: 16,
                 cursor: 'pointer', transition: 'all 0.2s ease',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
