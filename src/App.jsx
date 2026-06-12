@@ -1970,7 +1970,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
   // ver.3 — 낮은 단계(자체해결·관계회복·경미 처분 맥락, stage 0~3) 전용 탭.
   // 안전 원칙: 가해자→피해자 *직접 접촉/사과 스크립트 금지* (학교·전문가 중재 경유),
   // 생기부·기간·입시 등 *구체 법적 결과 단정 금지* (학교·두루 확인으로 연결).
-  const isLowStage = data.classification.stage_focus <= 3;
+  const isLowStage = data.classification?.stage_signal <= 3;
   const STAGE_LABELS = {
     0: '사전 예방·정보 탐색', 1: '사건 발생 직후', 2: '학교 신고·사실확인',
     3: '학교장 자체해결 검토', 4: '학폭위 심의 통보', 5: '학폭위 심의 직전',
@@ -2239,7 +2239,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
               </div>
               <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
                 <p className="text-xs" style={{ color: C.inkMute }}>현재 단계</p>
-                <p className="font-bold text-sm" style={{ color: C.ink }}>{STAGE_LABELS[data.classification.stage_focus] || '확인 중'}</p>
+                <p className="font-bold text-sm" style={{ color: C.ink }}>{STAGE_LABELS[data.classification.stage_signal] || '확인 중'}</p>
               </div>
               <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
                 <p className="text-xs" style={{ color: C.inkMute }}>참고</p>
