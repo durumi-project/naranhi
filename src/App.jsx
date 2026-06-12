@@ -620,13 +620,14 @@ function Landing({ onStart, onExample }) {
                 const title = derivePersonaTitle(p);
                 return (
                   <button key={p.id} onClick={() => onExample(p)} style={{
-                    width: '100%', textAlign: 'left', padding: 12,
-                    background: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 12,
-                    cursor: 'pointer', transition: 'all 0.15s',
+                    width: '100%', textAlign: 'left', padding: 18,
+                    background: C.cardWarm, border: `2px solid ${C.accent}`, borderRadius: 16,
+                    cursor: 'pointer', transition: 'all 0.2s',
+                    boxShadow: `0 2px 8px ${C.lineSoft}`,
                     display: 'flex', alignItems: 'center', gap: 12,
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.amber; e.currentTarget.style.transform = 'translateX(2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.lineSoft; e.currentTarget.style.transform = ''; }}>
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = `0 4px 16px ${C.lineSoft}`; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 2px 8px ${C.lineSoft}`; }}>
                     <span style={{ fontSize: 22 }}>{p.emoji}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -651,7 +652,13 @@ function Landing({ onStart, onExample }) {
           { icon: <Search size={20} />, title: '비슷한 사례를 찾아드려요', desc: '공개 판례 중 상황과 가장 비슷한 사례를 찾아 보여드려요.' },
           { icon: <Shield size={20} />, title: '혼자 결정하지 않아도 돼요', desc: '같이 이야기할 수 있는 어른(선생님·상담 선생님·보호자)이 있어요.' },
         ].map((it, i) => (
-          <div key={i} className="card-base p-6 anim-fade-up" style={{ animationDelay: `${0.2 + i * 0.08}s` }}>
+          <div key={i} className="p-6 anim-fade-up" style={{
+            background: '#f5f5f5',
+            border: 'none',
+            borderRadius: 12,
+            cursor: 'default',
+            animationDelay: `${0.2 + i * 0.08}s`
+          }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: C.cardWarm, color: C.amberDeep, display: 'grid', placeItems: 'center', marginBottom: 14 }}>{it.icon}</div>
             <h3 className="font-semibold text-base mb-1" style={{ color: C.ink }}>{it.title}</h3>
             <p className="text-sm leading-relaxed" style={{ color: C.inkSoft }}>{it.desc}</p>
