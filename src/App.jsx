@@ -1985,6 +1985,8 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
   const tabs = isLowStage ? LOW_STAGE_TABS : RESULT_TABS;
   // activeTab 기본값('legal')이 현재 탭 집합에 없으면 첫 탭으로 폴백 (단계 변경·편집 대응).
   const effectiveTab = tabs.some((t) => t.key === activeTab) ? activeTab : tabs[0].key;
+  // 처분 안내 탭 — '실제 처분'은 처분 전 단계라 없음. 가장 비슷한 매칭 사례의 결과를 정직하게 라벨링해 참고로 보여줌.
+  const topMatchedCase = allMatched[0] || null;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -2278,7 +2280,24 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
         {effectiveTab === 'disposition' && (
           <div className="card-base p-6 anim-fade-in">
             <div className="flex items-center gap-2 mb-1"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분 안내</h3></div>
-            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>비교적 가벼운 단계에서 자주 논의되는 조치(1~4호)예요. 어떤 조치가 내려질지는 심의위원회가 정하니 미리 단정하지 않아요.</p>
+            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>아직 처분이 정해지지 않은 단계예요. 어떤 조치가 내려질지는 심의위원회가 정하니 미리 단정하지 않아요. 대신 가장 비슷한 사례의 결과를 참고로 보여드려요.</p>
+
+            {topMatchedCase && (topMatchedCase.disposition_summary || topMatchedCase.recognition) && (
+              <div className="mb-5 p-5" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `4px solid ${C.accent}` }}>
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span className="chip text-[10px]" style={{ background: C.accent, color: '#fff', padding: '2px 9px' }}>가장 비슷한 사례</span>
+                  {topMatchedCase.recognition && <span className="chip text-[10px]" style={{ background: C.bg, color: C.inkSoft, padding: '2px 9px' }}>{topMatchedCase.recognition}</span>}
+                </div>
+                {topMatchedCase.friendly_title && <p className="font-semibold text-sm mb-1" style={{ color: C.ink }}>{topMatchedCase.friendly_title}</p>}
+                {topMatchedCase.disposition_summary && <p className="text-sm" style={{ color: C.ink }}>결과: <strong>{topMatchedCase.disposition_summary}</strong></p>}
+                <p className="text-xs mt-2 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
+                  <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
+                  <span>이 사례가 당신과 같은 결과로 이어진다는 뜻은 아니에요. 처분은 사실관계에 따라 심의위원회가 정해요.</span>
+                </p>
+              </div>
+            )}
+
+            <p className="font-semibold text-sm mb-2" style={{ color: C.ink }}>이 단계에서 자주 논의되는 조치 (1~4호)</p>
             <div className="space-y-2">
               {Object.entries(PUNISHMENT_GUIDE).filter(([num]) => Number(num) <= 4).map(([num, g]) => (
                 <div key={num} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
