@@ -5,7 +5,6 @@ import {
   Users, Clock, ClipboardList, MessageCircleQuestion, ExternalLink,
   Heart, Info, ChevronDown, ChevronUp, Loader2, Home, RotateCcw,
   AlertTriangle, Code, Zap, Database, PlayCircle,
-  CheckCircle2, GraduationCap, MessageCircle,
 } from 'lucide-react';
 
 // 데이터 8종 - src/data/*.json (외부화 완료)
@@ -1967,32 +1966,6 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
     ? analysis.required_evidence.slice().sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99))
     : [];
 
-  // ver.3 — 낮은 단계(자체해결·관계회복·경미 처분 맥락, stage 0~3) 전용 탭.
-  // 안전 원칙: 가해자→피해자 *직접 접촉/사과 스크립트 금지* (학교·전문가 중재 경유),
-  // 생기부·기간·입시 등 *구체 법적 결과 단정 금지* (학교·두루 확인으로 연결).
-  // 낮은 단계 탭은 *단계가 명시적으로 낮게 감지된 경우*에만 노출.
-  // classify()는 단계 키워드가 없으면 stage_signal=0(기본값)으로 두므로, 미감지(기본값)는
-  // 낮은 단계로 취급하지 않고 기존(높은 단계) 탭을 유지한다 — 강한 상황이 낮은 단계로 새는 것 방지.
-  const stageDetected = Object.keys(data.classification?.raw_scores?.stage ?? {}).length > 0;
-  const isLowStage = stageDetected && data.classification.stage_signal <= 3;
-  const STAGE_LABELS = {
-    0: '사전 예방·정보 탐색', 1: '사건 발생 직후', 2: '학교 신고·사실확인',
-    3: '학교장 자체해결 검토', 4: '학폭위 심의 통보', 5: '학폭위 심의 직전',
-    6: '학폭위 심의 진행 중', 7: '처분 결정·통보', 8: '처분 이행·재심', 9: '형사·민사 병행',
-  };
-  const LOW_STAGE_TABS = [
-    { key: 'summary', label: '📋 상황 정리' },
-    { key: 'todo', label: '✅ 지금 할 일' },
-    { key: 'disposition', label: '📜 처분 안내' },
-    { key: 'tips', label: '💬 합의·화해 팁' },
-    { key: 'career', label: '🎓 생기부·진로' },
-  ];
-  const tabs = isLowStage ? LOW_STAGE_TABS : RESULT_TABS;
-  // activeTab 기본값('legal')이 현재 탭 집합에 없으면 첫 탭으로 폴백 (단계 변경·편집 대응).
-  const effectiveTab = tabs.some((t) => t.key === activeTab) ? activeTab : tabs[0].key;
-  // 처분 안내 탭 — '실제 처분'은 처분 전 단계라 없음. 가장 비슷한 매칭 사례의 결과를 정직하게 라벨링해 참고로 보여줌.
-  const topMatchedCase = allMatched[0] || null;
-
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* ver.3 — AI 기반 안내 주의 문구. 결과 화면 최상단 고정(모바일 동일 레이아웃). */}
@@ -2082,17 +2055,17 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           절차·처분·판례 탭은 기존 검증 데이터(타임라인·PUNISHMENT_GUIDE·실제 사례)로 채움. */}
       <div className="anim-fade-up mb-8" style={{ animationDelay: '0.05s' }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, borderBottom: `2px solid ${C.lineSoft}`, flexWrap: 'wrap' }}>
-          {tabs.map((tab) => (
+          {RESULT_TABS.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-              background: effectiveTab === tab.key ? C.accent : 'transparent',
-              color: effectiveTab === tab.key ? '#fff' : C.ink,
+              background: activeTab === tab.key ? C.accent : 'transparent',
+              color: activeTab === tab.key ? '#fff' : C.ink,
               padding: '8px 14px', border: 'none', borderRadius: '8px 8px 0 0',
-              cursor: 'pointer', fontWeight: effectiveTab === tab.key ? 700 : 500, fontSize: 13,
+              cursor: 'pointer', fontWeight: activeTab === tab.key ? 700 : 500, fontSize: 13,
             }}>{tab.label}</button>
           ))}
         </div>
 
-        {effectiveTab === 'legal' && (
+        {activeTab === 'legal' && (
           <div className="card-base p-6 anim-fade-in">
             <div className="flex items-center gap-2 mb-3"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>법적 성질</h3></div>
             <p className="leading-relaxed text-sm" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{legalText}</p>
@@ -2103,14 +2076,14 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           </div>
         )}
 
-        {effectiveTab === 'timeline' && (
+        {activeTab === 'timeline' && (
           <div className="space-y-6 anim-fade-in">
             <ProcedureTimeline currentStage={data.stage} />
             <StageForecastSection stage={data.stage} />
           </div>
         )}
 
-        {effectiveTab === 'punishment' && (
+        {activeTab === 'punishment' && (
           <div className="card-base p-6 anim-fade-in">
             <div className="flex items-center gap-2 mb-1"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분(조치)에는 어떤 것들이 있나요?</h3></div>
             <p className="text-sm mb-4" style={{ color: C.inkSoft }}>학교폭력대책심의위원회가 정할 수 있는 조치예요. 어떤 조치가 내려질지는 사실관계에 따라 심의위원회가 결정하므로, 여기서는 미리 예측하지 않아요.</p>
@@ -2128,7 +2101,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           </div>
         )}
 
-        {effectiveTab === 'strategy' && (
+        {activeTab === 'strategy' && (
           <div className="space-y-6 anim-fade-in">
             <div className="card-base p-6">
               <div className="flex items-center gap-2 mb-3"><Zap size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>선택지와 전략</h3></div>
@@ -2161,7 +2134,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           </div>
         )}
 
-        {effectiveTab === 'case' && (
+        {activeTab === 'case' && (
           <div className="card-base p-7 anim-fade-in">
           <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
             <div className="flex items-center gap-2"><Search size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>{COPY.sectionCases}</h3></div>
@@ -2223,160 +2196,6 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
               )}
             </>
           )}
-          </div>
-        )}
-
-        {effectiveTab === 'summary' && (
-          <div className="card-base p-6 anim-fade-in">
-            <div className="flex items-center gap-2 mb-3"><Sparkles size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>상황 정리</h3></div>
-            <div className="mb-5 p-4" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `4px solid ${C.accent}` }}>
-              <p className="text-sm leading-relaxed" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{data.llm?.friendly_response || COPY.sectionFriendly}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
-                <p className="text-xs" style={{ color: C.inkMute }}>유형</p>
-                <p className="font-bold text-sm" style={{ color: C.ink }}>{typeLabelText || '미정'}</p>
-              </div>
-              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
-                <p className="text-xs" style={{ color: C.inkMute }}>역할</p>
-                <p className="font-bold text-sm" style={{ color: C.ink }}>{ROLE_LABELS[role] || '미정'}</p>
-              </div>
-              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
-                <p className="text-xs" style={{ color: C.inkMute }}>현재 단계</p>
-                <p className="font-bold text-sm" style={{ color: C.ink }}>{STAGE_LABELS[data.classification.stage_signal] || '확인 중'}</p>
-              </div>
-              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
-                <p className="text-xs" style={{ color: C.inkMute }}>참고</p>
-                <p className="font-bold text-sm" style={{ color: C.accent }}>회복·대화로 풀어갈 수 있어요</p>
-              </div>
-            </div>
-            <p className="text-xs mt-3 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
-              <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
-              <span>처분·결과는 심의위원회가 정해요. 여기서는 미리 단정하지 않아요.</span>
-            </p>
-          </div>
-        )}
-
-        {effectiveTab === 'todo' && (
-          <div className="card-base p-7 anim-fade-in">
-            <div className="flex items-center gap-2 mb-4"><CheckCircle2 size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>지금 할 일</h3></div>
-            {[
-              { priority: 1, title: '피해자와 대화 / 사과하기', details: ['진심 어린 마음으로 접근하기', '구체적으로 뭘 잘못했는지 인정하기', '예: "그때 내가 욕설한 거 잘못했어. 정말 미안해"', '※ 접촉 금지 등 조치가 있으면 직접 연락 대신 선생님을 통해 전해요'] },
-              { priority: 2, title: '담임/상담 선생님과 상담', details: ['앞으로 조심하겠다는 마음 전하기', '도움과 응원 청하기'] },
-              { priority: 3, title: '합의서 작성 (학교 양식)', details: ['양쪽이 함께 작성하기', '양쪽 모두 서명하기', '약속 기간 확인하기'] },
-            ].map((item, i) => (
-              <div key={i} className="mb-4 p-4" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `3px solid ${C.amber}` }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer', marginTop: 2 }} />
-                  <div className="flex-1">
-                    <p className="font-bold text-sm mb-2">{item.priority}순위: {item.title}</p>
-                    {item.details.map((d, j) => <p key={j} className="text-xs" style={{ color: C.inkSoft, marginBottom: 4 }}>• {d}</p>)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {effectiveTab === 'disposition' && (
-          <div className="card-base p-7 anim-fade-in">
-            <div className="flex items-center gap-2 mb-4"><FileText size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분 안내</h3></div>
-            <div className="p-6" style={{ background: C.cardWarm, borderRadius: 12 }}>
-              <h4 className="font-bold text-base mb-3">학교장 자체해결 (합의)</h4>
-              <p className="text-sm mb-4" style={{ color: C.inkSoft }}>양쪽이 함께 이야기해서 합의하는 방식이에요. 가장 좋은 결과라고 할 수 있어요.</p>
-              <div className="mb-6">
-                <p className="font-semibold text-sm mb-3">실제 진행 일정</p>
-                <div className="space-y-2">
-                  <p className="text-sm">→ <span style={{ fontWeight: 600 }}>이번 주</span> 담임 선생님과 만남</p>
-                  <p className="text-sm">→ <span style={{ fontWeight: 600 }}>친구와 함께</span> 대화하기</p>
-                  <p className="text-sm">→ <span style={{ fontWeight: 600 }}>합의서</span> 작성 (양쪽 서명)</p>
-                  <p className="text-sm font-bold" style={{ color: C.accent }}>→ 끝! (특별한 처분 없음)</p>
-                </div>
-              </div>
-              <div style={{ background: '#f0f8f0', padding: 12, borderRadius: 8 }}>
-                <p className="text-sm font-semibold mb-2">💚 생기부 기록</p>
-                <p className="text-sm">기록이 남지 않을 가능성이 매우 높아요. 깨끗한 출발이 가능해요.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {effectiveTab === 'tips' && (
-          <div className="card-base p-7 anim-fade-in">
-            <div className="flex items-center gap-2 mb-4"><MessageCircle size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>합의·화해 팁</h3></div>
-            <div className="mb-6">
-              <h4 className="font-semibold text-base mb-3">대화 팁</h4>
-              {[
-                { title: '1) 먼저 진심을 전하세요', detail: '"내가 잘못했어. 진짜 미안해" — 변명하지 않기' },
-                { title: '2) 상대방 마음을 이해하세요', detail: '"네가 얼마나 상처받았을까 미안해" — 감정 인정' },
-                { title: '3) 앞으로의 다짐', detail: '"앞으로 절대 욕하지 않겠어" — 구체적으로 말하기' },
-              ].map((t, i) => (
-                <div key={i} className="mb-3 p-4" style={{ background: C.bg, borderRadius: 8 }}>
-                  <p className="font-semibold text-sm mb-1">{t.title}</p>
-                  <p className="text-sm" style={{ color: C.inkSoft }}>{t.detail}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mb-6">
-              <h4 className="font-semibold text-base mb-3">마음가짐</h4>
-              <div className="p-4" style={{ background: C.cardWarm, borderRadius: 8 }}>
-                <p className="text-sm mb-2">💚 관계를 다시 시작할 기회</p>
-                <p className="text-sm mb-2">💚 성장할 수 있는 경험</p>
-                <p className="text-sm">💚 친구도 대부분 받아줄 준비 중</p>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold text-base mb-3">주의사항</h4>
-              <div className="p-4" style={{ background: '#fff5f5', borderRadius: 8, borderLeft: `3px solid ${C.danger}` }}>
-                <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ 거짓 사과하지 않기</p>
-                <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ "미안하다" 반복만 하지 않기</p>
-                <p className="text-sm" style={{ color: C.danger }}>⚠️ 합의 후 약속 꼭 지키기 (위반하면 처분 상향)</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {effectiveTab === 'career' && (
-          <div className="card-base p-7 anim-fade-in">
-            <div className="flex items-center gap-2 mb-4"><GraduationCap size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>생기부·진로 영향</h3></div>
-            <div className="mb-6 p-5" style={{ background: C.cardWarm, borderRadius: 12 }}>
-              <h4 className="font-semibold text-sm mb-3">당신의 경우 ({data.school_level === 'MS' ? '중학생' : data.school_level === 'HS' ? '고등학생' : '학생'})</h4>
-              <p className="text-sm">{data.school_level === 'MS' ? '중학생 기록은 대부분 남지 않아요. 고등학교 때 깨끗한 출발이 가능해요.' : data.school_level === 'HS' ? '고등학생 기록이 남을 수 있지만, 합의로 해결되면 영향을 최소화할 수 있어요.' : '처분 기록 영향은 제한적이에요. 중요한 건 앞으로의 행동이에요.'}</p>
-            </div>
-            <div className="mb-6">
-              <h4 className="font-semibold text-base mb-3">처분별 생기부 기록</h4>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: C.bg, borderBottom: `1px solid ${C.line}` }}>
-                      <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>처분</th>
-                      <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>기록</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { proc: '1호 서면사과', record: '✓ 안 남음' },
-                      { proc: '2호 접촉금지', record: '✓ 안 남음' },
-                      { proc: '3호 학교내 봉사', record: '△ 활동만' },
-                      { proc: '4호 사회봉사', record: '✓ 기록됨' },
-                      { proc: '자체해결·합의', record: '✓ 안 남음' },
-                    ].map((row, i) => (
-                      <tr key={i} style={{ borderBottom: `1px solid ${C.lineSoft}` }}>
-                        <td style={{ padding: 10 }}>{row.proc}</td>
-                        <td style={{ padding: 10, color: C.accent, fontWeight: 500 }}>{row.record}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs mt-2" style={{ color: C.amberDeep }}>※ 정확한 기재 여부·기간은 학교(담임·학폭 담당)나 두루 공익법센터에 꼭 확인하세요. 학교급·졸업 시 삭제 심의 등에 따라 달라요.</p>
-            </div>
-            <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
-              <h4 className="font-semibold text-sm mb-3">앞으로</h4>
-              <p className="text-sm mb-2">✓ 1~4주 내 모든 절차 완료</p>
-              <p className="text-sm mb-2">✓ 이후 완전히 새로운 시작 가능</p>
-              <p className="text-sm" style={{ color: C.accent, fontWeight: 600 }}>✓ "학교폭력이 끝"이 아니라 "성장의 기회"로 전환</p>
-            </div>
           </div>
         )}
       </div>
