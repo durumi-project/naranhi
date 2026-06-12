@@ -438,13 +438,13 @@ const RESULT_TABS = [
    DESIGN TOKENS
    ============================================================================ */
 const C = {
-  bg: '#FAF5E4', bgSoft: '#F4ECCF', card: '#FFFFFF', cardWarm: '#FFF9E6',
-  ink: '#1F2D1F', inkSoft: '#4A5A4A', inkMute: '#7B8A7B',
-  line: '#E5DCB8', lineSoft: '#EFE7C9',
-  accent: '#3F5D3F', accentInk: '#FFFFFF',
-  amber: '#E8B547', amberDeep: '#C68A1F',
-  tagYellow: '#F4E5A1', tagBlue: '#D6E4D6', tagRed: '#F5D5C3',
-  danger: '#B5483A',
+  bg: '#FFFEF8', bgSoft: '#FAF6EF', card: '#FFFFFF', cardWarm: '#FFFBF3',
+  ink: '#1B2D1B', inkSoft: '#5A6B5A', inkMute: '#8B9B8B',
+  line: '#EAE0D0', lineSoft: '#F3EAE0',
+  accent: '#3A5A3A', accentInk: '#FFFFFF',
+  amber: '#E8C14D', amberDeep: '#D4A940',
+  tagYellow: '#F9E5A8', tagBlue: '#D8E8D8', tagRed: '#F5D5C3',
+  danger: '#D85A4A',
 };
 
 /* ============================================================================
@@ -578,90 +578,85 @@ function ProgressBar({ step, total }) {
 
 function Landing({ onStart, onExample }) {
   return (
-    <div className="max-w-6xl mx-auto px-6 pt-10 pb-20 anim-fade-in">
-      <div className="grid md:grid-cols-12 gap-10 items-center mb-12">
-        <div className="md:col-span-7 anim-fade-up">
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            <div className="chip" style={{ background: C.tagYellow, color: C.amberDeep }}>
-              <Sparkles size={14} /> ver.3
-            </div>
-            <div className="chip" style={{ background: C.card, color: C.inkSoft, border: `1px solid ${C.lineSoft}` }}>
-              14세 이상 학생을 위한 도구
-            </div>
+    <div className="max-w-5xl mx-auto px-5 sm:px-6 pt-8 pb-20 anim-fade-in">
+      {/* 히어로 — 축소·단순·따뜻 (아동청소년 눈높이) */}
+      <div className="text-center md:text-left mb-10 anim-fade-up">
+        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4">
+          <div className="chip" style={{ background: C.tagYellow, color: C.amberDeep }}>
+            <Sparkles size={14} /> ver.3
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold leading-[1.1] mb-6" style={{ color: C.ink }}>
-            법은 어렵지 않아요.<br />
-            <span style={{ color: C.ink }}>당신의 곁에 나란히</span> 설게요.
-          </h1>
-          <p className="text-lg leading-relaxed mb-8" style={{ color: C.inkSoft }}>
-            학교폭력으로 어려움을 겪고 있다면 당신과 비슷한 사례를 찾아<br />
-            지금 어떤 절차에 있는지, 무엇을 준비해야 하는지 쉬운 말로 알려드려요.
-          </p>
-          <div className="flex flex-wrap gap-3 mb-4">
-            <button onClick={onStart} className="btn-primary">지금 시작하기 <ArrowRight size={18} /></button>
+          <div className="chip" style={{ background: C.card, color: C.inkSoft, border: `1px solid ${C.lineSoft}` }}>
+            14세 이상 학생을 위한 도구
           </div>
         </div>
-        <div className="md:col-span-5 anim-fade-up" style={{ animationDelay: '0.1s' }}>
-          {/* W5-4 — 기존 "데이터 구동 검증" 헤더·문구 박스 제거. 예시 카드만 유지.
-              W5-1 — 예시 카드 제목을 코드명(P-001 등) 대신 summary 기반 친화 제목으로.
-              ver.3 — '데모' → '예시' 용어 통일. 카드 위 설명 한 줄 + '예시 N: 제목' 형식. */}
-          <div style={{ background: C.cardWarm, border: `1.5px solid ${C.line}`, borderRadius: 28, padding: 24, boxShadow: `0 30px 60px -30px ${C.amber}55` }}>
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-1">
-                <PlayCircle size={16} color={C.amberDeep} />
-                <span className="font-semibold text-sm" style={{ color: C.ink }}>예시로 미리 체험해 보세요</span>
-              </div>
-              <p className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>
-                아래 예시를 누르면 실제 입력 없이도 어떤 안내를 받게 되는지 바로 볼 수 있어요.
-              </p>
-            </div>
-            <div className="space-y-2">
-              {EXAMPLE_PERSONAS.map((p, i) => {
-                const title = derivePersonaTitle(p);
-                return (
-                  <button key={p.id} onClick={() => onExample(p)} style={{
-                    width: '100%', textAlign: 'left', padding: 18,
-                    background: C.cardWarm, border: `2px solid ${C.accent}`, borderRadius: 16,
-                    cursor: 'pointer', transition: 'all 0.2s',
-                    boxShadow: `0 2px 8px ${C.lineSoft}`,
-                    display: 'flex', alignItems: 'center', gap: 12,
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = `0 4px 16px ${C.lineSoft}`; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 2px 8px ${C.lineSoft}`; }}>
-                    <span style={{ fontSize: 22 }}>{p.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm" style={{ color: C.ink }}>예시 {i + 1}: {title}</span>
-                        <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
-                          {p.age_band}
-                        </span>
-                      </div>
-                      <div className="text-xs truncate" style={{ color: C.inkSoft }}>{p.label}</div>
-                    </div>
-                    <PlayCircle size={18} color={C.accent} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        <h1 className="font-display text-2xl md:text-3xl font-bold leading-[1.25] mb-4" style={{ color: C.ink }}>
+          법은 어렵지 않아요.<br />
+          <span style={{ color: C.ink }}>당신의 곁에 나란히</span> 설게요.
+        </h1>
+        <p className="text-base leading-relaxed mb-6 max-w-2xl mx-auto md:mx-0" style={{ color: C.inkSoft }}>
+          학교폭력으로 어려움을 겪고 있다면 당신과 비슷한 사례를 찾아
+          지금 어떤 절차에 있는지, 무엇을 준비해야 하는지 쉬운 말로 알려드려요.
+        </p>
+        <button onClick={onStart} className="btn-primary">지금 시작하기 <ArrowRight size={18} /></button>
+      </div>
+
+      {/* 예시 섹션 — 메인 액션으로 강조 (모바일 1열 / 태블릿·데스크톱 2열).
+          W5-1 — 예시 카드 제목을 코드명(P-001 등) 대신 summary 기반 친화 제목으로.
+          ver.3 — '데모' → '예시' 용어 통일. */}
+      <div className="mb-14">
+        <div className="flex items-center gap-2 mb-1">
+          <PlayCircle size={20} color={C.amberDeep} />
+          <span className="font-display font-bold text-lg" style={{ color: C.ink }}>예시로 미리 체험해 보세요</span>
+        </div>
+        <p className="text-base leading-relaxed mb-5" style={{ color: C.inkSoft }}>
+          아래 예시를 누르면 실제 입력 없이도 어떤 안내를 받게 되는지 바로 볼 수 있어요.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {EXAMPLE_PERSONAS.map((p, i) => {
+            const title = derivePersonaTitle(p);
+            return (
+              <button key={p.id} onClick={() => onExample(p)} className="anim-fade-up" style={{
+                width: '100%', textAlign: 'left', padding: 24, minHeight: 120,
+                background: C.cardWarm, border: `2px solid ${C.amber}`, borderRadius: 16,
+                cursor: 'pointer', transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                display: 'flex', alignItems: 'center', gap: 14,
+                animationDelay: `${i * 0.08}s`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; }}>
+                <span style={{ fontSize: 30 }}>{p.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="font-semibold text-base" style={{ color: C.ink }}>예시 {i + 1}: {title}</span>
+                    <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
+                      {p.age_band}
+                    </span>
+                  </div>
+                  <div className="text-sm truncate" style={{ color: C.inkSoft }}>{p.label}</div>
+                </div>
+                <PlayCircle size={20} color={C.accent} />
+              </button>
+            );
+          })}
         </div>
       </div>
-      <div className="grid md:grid-cols-3 gap-4 mt-8">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         {[
-          { icon: <BookOpen size={20} />, title: '쉬운 말로 풀어드려요', desc: '어려운 법률 용어 대신, 학년에 맞는 표현으로 안내해 드려요.' },
-          { icon: <Search size={20} />, title: '비슷한 사례를 찾아드려요', desc: '공개 판례 중 상황과 가장 비슷한 사례를 찾아 보여드려요.' },
-          { icon: <Shield size={20} />, title: '혼자 결정하지 않아도 돼요', desc: '같이 이야기할 수 있는 어른(선생님·상담 선생님·보호자)이 있어요.' },
+          { icon: <BookOpen size={22} />, title: '쉬운 말로 풀어드려요', desc: '어려운 법률 용어 대신, 학년에 맞는 표현으로 안내해 드려요.' },
+          { icon: <Search size={22} />, title: '비슷한 사례를 찾아드려요', desc: '공개 판례 중 상황과 가장 비슷한 사례를 찾아 보여드려요.' },
+          { icon: <Shield size={22} />, title: '혼자 결정하지 않아도 돼요', desc: '같이 이야기할 수 있는 어른(선생님·상담 선생님·보호자)이 있어요.' },
         ].map((it, i) => (
           <div key={i} className="p-6 anim-fade-up" style={{
-            background: '#f5f5f5',
+            background: '#F5F0E8',
             border: 'none',
-            borderRadius: 12,
+            borderRadius: 16,
             cursor: 'default',
             animationDelay: `${0.2 + i * 0.08}s`
           }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: C.cardWarm, color: C.amberDeep, display: 'grid', placeItems: 'center', marginBottom: 14 }}>{it.icon}</div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: C.card, color: C.accent, display: 'grid', placeItems: 'center', marginBottom: 14 }}>{it.icon}</div>
             <h3 className="font-semibold text-base mb-1" style={{ color: C.ink }}>{it.title}</h3>
-            <p className="text-sm leading-relaxed" style={{ color: C.inkSoft }}>{it.desc}</p>
+            <p className="text-base leading-relaxed" style={{ color: C.inkSoft }}>{it.desc}</p>
           </div>
         ))}
       </div>
