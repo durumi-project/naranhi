@@ -578,7 +578,7 @@ function ProgressBar({ step, total }) {
 
 function Landing({ onStart, onExample }) {
   return (
-    <div className="max-w-5xl mx-auto px-5 sm:px-6 pt-8 pb-20 anim-fade-in">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pt-8 pb-20 anim-fade-in" style={{ wordBreak: 'keep-all', lineHeight: 1.6 }}>
       {/* 히어로 — 축소·단순·따뜻 (아동청소년 눈높이) */}
       <div className="text-center md:text-left mb-10 anim-fade-up">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4">
@@ -589,11 +589,11 @@ function Landing({ onStart, onExample }) {
             14세 이상 학생을 위한 도구
           </div>
         </div>
-        <h1 className="font-display text-2xl md:text-3xl font-bold leading-[1.25] mb-4" style={{ color: C.ink }}>
+        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.25] mb-4" style={{ color: C.ink }}>
           법은 어렵지 않아요.<br />
           <span style={{ color: C.ink }}>당신의 곁에 나란히</span> 설게요.
         </h1>
-        <p className="text-base leading-relaxed mb-6 max-w-2xl mx-auto md:mx-0" style={{ color: C.inkSoft }}>
+        <p className="text-sm sm:text-base md:text-lg leading-relaxed mb-6 max-w-2xl mx-auto md:mx-0" style={{ color: C.inkSoft }}>
           학교폭력으로 어려움을 겪고 있다면 당신과 비슷한 사례를 찾아
           지금 어떤 절차에 있는지, 무엇을 준비해야 하는지 쉬운 말로 알려드려요.
         </p>
@@ -606,12 +606,12 @@ function Landing({ onStart, onExample }) {
       <div className="mb-14">
         <div className="flex items-center gap-2 mb-1">
           <PlayCircle size={20} color={C.amberDeep} />
-          <span className="font-display font-bold text-lg" style={{ color: C.ink }}>예시로 미리 체험해 보세요</span>
+          <span className="font-display font-bold text-base sm:text-lg md:text-xl" style={{ color: C.ink }}>예시로 미리 체험해 보세요</span>
         </div>
-        <p className="text-base leading-relaxed mb-5" style={{ color: C.inkSoft }}>
+        <p className="text-sm sm:text-base leading-relaxed mb-5" style={{ color: C.inkSoft }}>
           아래 예시를 누르면 실제 입력 없이도 어떤 안내를 받게 되는지 바로 볼 수 있어요.
         </p>
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
           {EXAMPLE_PERSONAS.map((p, i) => {
             const title = derivePersonaTitle(p);
             return (
@@ -628,7 +628,7 @@ function Landing({ onStart, onExample }) {
                 <span style={{ fontSize: 30 }}>{p.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-semibold text-base" style={{ color: C.ink }}>예시 {i + 1}: {title}</span>
+                    <span className="font-semibold text-sm sm:text-base" style={{ color: C.ink }}>예시 {i + 1}: {title}</span>
                     <span className="chip text-[10px]" style={{ background: C.bgSoft, color: C.inkSoft, padding: '2px 8px' }}>
                       {p.age_band}
                     </span>
@@ -641,7 +641,7 @@ function Landing({ onStart, onExample }) {
           })}
         </div>
       </div>
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         {[
           { icon: <BookOpen size={22} />, title: '쉬운 말로 풀어드려요', desc: '어려운 법률 용어 대신, 학년에 맞는 표현으로 안내해 드려요.' },
           { icon: <Search size={22} />, title: '비슷한 사례를 찾아드려요', desc: '공개 판례 중 상황과 가장 비슷한 사례를 찾아 보여드려요.' },
@@ -655,8 +655,8 @@ function Landing({ onStart, onExample }) {
             animationDelay: `${0.2 + i * 0.08}s`
           }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: C.card, color: C.accent, display: 'grid', placeItems: 'center', marginBottom: 14 }}>{it.icon}</div>
-            <h3 className="font-semibold text-base mb-1" style={{ color: C.ink }}>{it.title}</h3>
-            <p className="text-base leading-relaxed" style={{ color: C.inkSoft }}>{it.desc}</p>
+            <h3 className="font-semibold text-base sm:text-lg mb-1" style={{ color: C.ink }}>{it.title}</h3>
+            <p className="text-sm sm:text-base leading-relaxed" style={{ color: C.inkSoft }}>{it.desc}</p>
           </div>
         ))}
       </div>
@@ -665,7 +665,7 @@ function Landing({ onStart, onExample }) {
       <section className="mt-14 anim-fade-up" style={{ animationDelay: '0.45s' }}>
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           <Users size={20} color={C.accent} />
-          <h2 className="font-display text-2xl font-bold" style={{ color: C.ink }}>도와줄 어른과 기관이 있어요</h2>
+          <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: C.ink }}>도와줄 어른과 기관이 있어요</h2>
         </div>
         <p className="text-sm leading-relaxed mb-5 max-w-3xl" style={{ color: C.inkSoft }}>
           혼자 결정하지 않으셔도 됩니다. 학교 안, 가족, 학교 밖 전문 기관까지 함께 이야기할 수 있는 사람들이 있어요.
