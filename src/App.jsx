@@ -1970,7 +1970,11 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
   // ver.3 — 낮은 단계(자체해결·관계회복·경미 처분 맥락, stage 0~3) 전용 탭.
   // 안전 원칙: 가해자→피해자 *직접 접촉/사과 스크립트 금지* (학교·전문가 중재 경유),
   // 생기부·기간·입시 등 *구체 법적 결과 단정 금지* (학교·두루 확인으로 연결).
-  const isLowStage = data.classification?.stage_signal <= 3;
+  // 낮은 단계 탭은 *단계가 명시적으로 낮게 감지된 경우*에만 노출.
+  // classify()는 단계 키워드가 없으면 stage_signal=0(기본값)으로 두므로, 미감지(기본값)는
+  // 낮은 단계로 취급하지 않고 기존(높은 단계) 탭을 유지한다 — 강한 상황이 낮은 단계로 새는 것 방지.
+  const stageDetected = Object.keys(data.classification?.raw_scores?.stage ?? {}).length > 0;
+  const isLowStage = stageDetected && data.classification.stage_signal <= 3;
   const STAGE_LABELS = {
     0: '사전 예방·정보 탐색', 1: '사건 발생 직후', 2: '학교 신고·사실확인',
     3: '학교장 자체해결 검토', 4: '학폭위 심의 통보', 5: '학폭위 심의 직전',
