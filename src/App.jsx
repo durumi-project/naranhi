@@ -2297,6 +2297,14 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
               </div>
             )}
 
+            <p className="font-semibold text-sm mb-2" style={{ color: C.ink }}>보통 이렇게 흘러가요</p>
+            <div className="mb-5 p-4" style={{ background: C.bg, borderRadius: 10 }}>
+              <p className="text-sm mb-1" style={{ color: C.ink }}>→ 담임·상담 선생님과 먼저 의논해요.</p>
+              <p className="text-sm mb-1" style={{ color: C.ink }}>→ (양측이 동의하면) 학교가 마련하는 자리에서 대화·관계회복을 해요. 피해 학생의 뜻이 우선이에요.</p>
+              <p className="text-sm mb-1" style={{ color: C.ink }}>→ 합의서가 필요하면 보호자·선생님과 함께 작성해요.</p>
+              <p className="text-sm font-semibold" style={{ color: C.accent }}>→ 비교적 짧게 마무리되는 경우가 많아요 (상황·학교에 따라 달라요).</p>
+            </div>
+
             <p className="font-semibold text-sm mb-2" style={{ color: C.ink }}>이 단계에서 자주 논의되는 조치 (1~4호)</p>
             <div className="space-y-2">
               {Object.entries(PUNISHMENT_GUIDE).filter(([num]) => Number(num) <= 4).map(([num, g]) => (
@@ -2320,6 +2328,19 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           <div className="card-base p-6 anim-fade-in">
             <div className="flex items-center gap-2 mb-1"><Heart size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>합의·화해 팁</h3></div>
             <p className="text-sm mb-4" style={{ color: C.inkSoft }}>사과·화해는 학교·전문가가 마련하는 자리에서, 피해 학생의 뜻을 존중하며 진행하는 게 가장 안전하고 도움이 돼요.</p>
+            <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>이렇게 마음을 전할 수 있어요 (학교가 마련한 자리에서)</h4>
+            <div className="mb-5">
+              {[
+                { title: '진심을 먼저', detail: '"내가 잘못했어. 진짜 미안해" — 변명 없이.' },
+                { title: '상대의 마음 이해', detail: '"얼마나 속상했을지 생각하니 미안해" — 감정을 인정해요.' },
+                { title: '앞으로의 다짐', detail: '"앞으로 절대 그러지 않을게" — 구체적으로 말해요.' },
+              ].map((t, i) => (
+                <div key={i} className="mb-2 p-3" style={{ background: C.bg, borderRadius: 8 }}>
+                  <p className="font-semibold text-sm mb-0.5" style={{ color: C.ink }}>{t.title}</p>
+                  <p className="text-sm" style={{ color: C.inkSoft }}>{t.detail}</p>
+                </div>
+              ))}
+            </div>
             <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>마음가짐</h4>
             <div className="p-4 mb-5" style={{ background: C.cardWarm, borderRadius: 10 }}>
               <p className="text-sm mb-2" style={{ color: C.ink }}>💚 진심으로 책임지고 회복하려는 마음이 가장 중요해요.</p>
@@ -2338,11 +2359,38 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
         {effectiveTab === 'career' && (
           <div className="card-base p-6 anim-fade-in">
             <div className="flex items-center gap-2 mb-1"><BookOpen size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>생기부·진로</h3></div>
-            <p className="text-sm leading-relaxed mb-4" style={{ color: C.ink }}>조치(처분)에 따라 학교생활기록부 기재 여부와 진로에 미치는 영향이 달라질 수 있어요. 다만 이 부분은 조치의 종류, 이행 여부, 학교급·지역 기준 등 여러 요건에 따라 달라서, 여기서 단정해 말씀드리기는 어려워요.</p>
-            <div className="p-4 mb-4" style={{ background: C.cardWarm, borderRadius: 10, borderLeft: `4px solid ${C.accent}` }}>
-              <p className="text-sm" style={{ color: C.ink }}>정확한 내용은 <strong>담임 선생님·학교 학교폭력 담당 선생님</strong> 또는 <strong>두루 공익법센터</strong>에 확인해 보세요. 학교가 정확한 기준을 안내해 줄 수 있어요.</p>
+            <p className="text-sm leading-relaxed mb-4" style={{ color: C.ink }}>조치(처분)에 따라 학교생활기록부 기재가 달라질 수 있어요. 아래는 일반적인 안내이고, 실제로는 조치 종류·이행 여부·학교급·졸업 시 삭제 심의 등 여러 요건에 따라 달라져요.</p>
+            <div style={{ overflowX: 'auto' }} className="mb-4">
+              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: C.cardWarm, borderBottom: `2px solid ${C.line}` }}>
+                    <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>조치</th>
+                    <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>생기부 일반 안내</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { proc: '1~3호 (서면사과·접촉금지·학교내 봉사)', record: '요건을 지키면 기재가 유보될 수 있어요' },
+                    { proc: '4호 (사회봉사)', record: '기재될 수 있어요' },
+                    { proc: '학교장 자체해결·합의', record: '처분이 아니라, 별도 기재 대상이 아닐 수 있어요' },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: `1px solid ${C.lineSoft}` }}>
+                      <td style={{ padding: 10, color: C.ink }}>{row.proc}</td>
+                      <td style={{ padding: 10, color: C.inkSoft }}>{row.record}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <p className="text-sm" style={{ color: C.inkSoft }}>분명한 건, 지금 절차를 성실히 따르고 회복에 집중하면 앞으로 새롭게 나아갈 수 있다는 거예요.</p>
+            <div className="p-4 mb-4" style={{ background: C.cardWarm, borderRadius: 10, borderLeft: `4px solid ${C.amberDeep}` }}>
+              <p className="text-sm" style={{ color: C.ink }}>⚠️ 위 표는 일반 안내예요. <strong>정확한 기재 여부·기간은 반드시 담임 선생님·학교 학교폭력 담당 또는 두루 공익법센터에 확인</strong>하세요. 학교급·졸업 시 삭제 심의 등 변수가 있어요.</p>
+            </div>
+            <div style={{ background: C.bg, padding: 14, borderRadius: 10 }}>
+              <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>앞으로</h4>
+              <p className="text-sm mb-1" style={{ color: C.ink }}>✓ 낮은 단계는 비교적 짧게 마무리되는 경우가 많아요 (상황·학교에 따라 달라요).</p>
+              <p className="text-sm mb-1" style={{ color: C.ink }}>✓ 절차를 성실히 따르고 회복에 집중하면 새롭게 나아갈 수 있어요.</p>
+              <p className="text-sm" style={{ color: C.accent, fontWeight: 600 }}>✓ "끝"이 아니라 "성장의 기회"로 삼을 수 있어요.</p>
+            </div>
           </div>
         )}
       </div>
