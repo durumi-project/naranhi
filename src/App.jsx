@@ -546,7 +546,7 @@ function Header({ onHome, showBack, onBack }) {
               borderRadius: '8px'
             }}
           />
-          <span className="font-bold text-base" style={{ color: C.ink }}>두루미</span>
+          <span className="font-display font-bold text-base" style={{ color: C.ink }}>두루미</span>
         </button>
         <div className="flex items-center gap-2">
           {showBack && <button onClick={onBack} className="btn-ghost text-sm"><ChevronLeft size={16} /> 이전</button>}
