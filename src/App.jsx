@@ -525,7 +525,7 @@ function GlobalStyles() {
       .btn-danger { background: ${C.danger}; color: white; padding: 14px 24px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
       .card-base { background: ${C.card}; border: 1px solid ${C.lineSoft}; border-radius: 18px; transition: all 0.2s; }
       .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -16px rgba(31, 45, 31, 0.18); border-color: ${C.line}; }
-      .pill-toggle { padding: 12px 18px; border-radius: 14px; border: 1.5px solid ${C.line}; background: ${C.card}; cursor: pointer; transition: all 0.15s; font-size: 15px; font-weight: 500; color: ${C.ink}; }
+      .pill-toggle { padding: 12px 18px; border-radius: 14px; border: 1.5px solid ${C.line}; background: ${C.card}; cursor: pointer; transition: all 0.15s; font-size: 15px; font-weight: 500; color: ${C.ink}; white-space: nowrap; }
       .pill-toggle:hover { border-color: ${C.amber}; background: ${C.cardWarm}; }
       .pill-toggle.active { border-color: ${C.accent}; background: ${C.accent}; color: white; }
       .pretty-input { width: 100%; padding: 16px 18px; border-radius: 14px; border: 1.5px solid ${C.line}; background: ${C.card}; font-family: 'Pretendard', sans-serif; font-size: 15px; color: ${C.ink}; resize: vertical; line-height: 1.6; transition: all 0.15s; }
