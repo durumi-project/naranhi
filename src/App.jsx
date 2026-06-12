@@ -546,6 +546,7 @@ function Header({ onHome, showBack, onBack }) {
               borderRadius: '8px'
             }}
           />
+          <span className="font-bold text-base" style={{ color: C.ink }}>두루미</span>
         </button>
         <div className="flex items-center gap-2">
           {showBack && <button onClick={onBack} className="btn-ghost text-sm"><ChevronLeft size={16} /> 이전</button>}
@@ -590,7 +591,7 @@ function Landing({ onStart, onExample }) {
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-bold leading-[1.1] mb-6" style={{ color: C.ink }}>
             법은 어렵지 않아요.<br />
-            <span style={{ color: C.accent }}>당신의 곁에 나란히</span> 설게요.
+            <span style={{ color: C.ink }}>당신의 곁에 나란히</span> 설게요.
           </h1>
           <p className="text-lg leading-relaxed mb-8" style={{ color: C.inkSoft }}>
             학교폭력으로 어려움을 겪고 있다면 당신과 비슷한 사례를 찾아<br />
