@@ -1966,6 +1966,26 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
     ? analysis.required_evidence.slice().sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99))
     : [];
 
+  // ver.3 — 낮은 단계(자체해결·관계회복·경미 처분 맥락, stage 0~3) 전용 탭.
+  // 안전 원칙: 가해자→피해자 *직접 접촉/사과 스크립트 금지* (학교·전문가 중재 경유),
+  // 생기부·기간·입시 등 *구체 법적 결과 단정 금지* (학교·두루 확인으로 연결).
+  const isLowStage = data.classification.stage_focus <= 3;
+  const STAGE_LABELS = {
+    0: '사전 예방·정보 탐색', 1: '사건 발생 직후', 2: '학교 신고·사실확인',
+    3: '학교장 자체해결 검토', 4: '학폭위 심의 통보', 5: '학폭위 심의 직전',
+    6: '학폭위 심의 진행 중', 7: '처분 결정·통보', 8: '처분 이행·재심', 9: '형사·민사 병행',
+  };
+  const LOW_STAGE_TABS = [
+    { key: 'summary', label: '📋 상황 정리' },
+    { key: 'todo', label: '✅ 지금 할 일' },
+    { key: 'disposition', label: '📜 처분 안내' },
+    { key: 'tips', label: '💬 합의·화해 팁' },
+    { key: 'career', label: '🎓 생기부·진로' },
+  ];
+  const tabs = isLowStage ? LOW_STAGE_TABS : RESULT_TABS;
+  // activeTab 기본값('legal')이 현재 탭 집합에 없으면 첫 탭으로 폴백 (단계 변경·편집 대응).
+  const effectiveTab = tabs.some((t) => t.key === activeTab) ? activeTab : tabs[0].key;
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* ver.3 — AI 기반 안내 주의 문구. 결과 화면 최상단 고정(모바일 동일 레이아웃). */}
@@ -2055,17 +2075,17 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           절차·처분·판례 탭은 기존 검증 데이터(타임라인·PUNISHMENT_GUIDE·실제 사례)로 채움. */}
       <div className="anim-fade-up mb-8" style={{ animationDelay: '0.05s' }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, borderBottom: `2px solid ${C.lineSoft}`, flexWrap: 'wrap' }}>
-          {RESULT_TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-              background: activeTab === tab.key ? C.accent : 'transparent',
-              color: activeTab === tab.key ? '#fff' : C.ink,
+              background: effectiveTab === tab.key ? C.accent : 'transparent',
+              color: effectiveTab === tab.key ? '#fff' : C.ink,
               padding: '8px 14px', border: 'none', borderRadius: '8px 8px 0 0',
-              cursor: 'pointer', fontWeight: activeTab === tab.key ? 700 : 500, fontSize: 13,
+              cursor: 'pointer', fontWeight: effectiveTab === tab.key ? 700 : 500, fontSize: 13,
             }}>{tab.label}</button>
           ))}
         </div>
 
-        {activeTab === 'legal' && (
+        {effectiveTab === 'legal' && (
           <div className="card-base p-6 anim-fade-in">
             <div className="flex items-center gap-2 mb-3"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>법적 성질</h3></div>
             <p className="leading-relaxed text-sm" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{legalText}</p>
@@ -2076,14 +2096,14 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           </div>
         )}
 
-        {activeTab === 'timeline' && (
+        {effectiveTab === 'timeline' && (
           <div className="space-y-6 anim-fade-in">
             <ProcedureTimeline currentStage={data.stage} />
             <StageForecastSection stage={data.stage} />
           </div>
         )}
 
-        {activeTab === 'punishment' && (
+        {effectiveTab === 'punishment' && (
           <div className="card-base p-6 anim-fade-in">
             <div className="flex items-center gap-2 mb-1"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분(조치)에는 어떤 것들이 있나요?</h3></div>
             <p className="text-sm mb-4" style={{ color: C.inkSoft }}>학교폭력대책심의위원회가 정할 수 있는 조치예요. 어떤 조치가 내려질지는 사실관계에 따라 심의위원회가 결정하므로, 여기서는 미리 예측하지 않아요.</p>
@@ -2101,7 +2121,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           </div>
         )}
 
-        {activeTab === 'strategy' && (
+        {effectiveTab === 'strategy' && (
           <div className="space-y-6 anim-fade-in">
             <div className="card-base p-6">
               <div className="flex items-center gap-2 mb-3"><Zap size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>선택지와 전략</h3></div>
@@ -2134,7 +2154,7 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
           </div>
         )}
 
-        {activeTab === 'case' && (
+        {effectiveTab === 'case' && (
           <div className="card-base p-7 anim-fade-in">
           <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
             <div className="flex items-center gap-2"><Search size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>{COPY.sectionCases}</h3></div>
@@ -2196,6 +2216,114 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
               )}
             </>
           )}
+          </div>
+        )}
+
+        {effectiveTab === 'summary' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-3"><Sparkles size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>상황 정리</h3></div>
+            <div className="mb-5 p-4" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `4px solid ${C.accent}` }}>
+              <p className="text-sm leading-relaxed" style={{ color: C.ink, whiteSpace: 'pre-wrap' }}>{data.llm?.friendly_response || COPY.sectionFriendly}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
+                <p className="text-xs" style={{ color: C.inkMute }}>유형</p>
+                <p className="font-bold text-sm" style={{ color: C.ink }}>{typeLabelText || '미정'}</p>
+              </div>
+              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
+                <p className="text-xs" style={{ color: C.inkMute }}>역할</p>
+                <p className="font-bold text-sm" style={{ color: C.ink }}>{ROLE_LABELS[role] || '미정'}</p>
+              </div>
+              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
+                <p className="text-xs" style={{ color: C.inkMute }}>현재 단계</p>
+                <p className="font-bold text-sm" style={{ color: C.ink }}>{STAGE_LABELS[data.classification.stage_focus] || '확인 중'}</p>
+              </div>
+              <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
+                <p className="text-xs" style={{ color: C.inkMute }}>참고</p>
+                <p className="font-bold text-sm" style={{ color: C.accent }}>회복·대화로 풀어갈 수 있어요</p>
+              </div>
+            </div>
+            <p className="text-xs mt-3 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
+              <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
+              <span>처분·결과는 심의위원회가 정해요. 여기서는 미리 단정하지 않아요.</span>
+            </p>
+          </div>
+        )}
+
+        {effectiveTab === 'todo' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-1"><Shield size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>지금 할 일</h3></div>
+            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>혼자 하지 않으셔도 돼요. 아래는 어른·학교와 함께 밟아가면 좋은 순서예요.</p>
+            {[
+              { title: '담임·상담 선생님과 먼저 상의하기', details: ['지금 상황과 마음을 믿을 수 있는 어른에게 먼저 이야기해요.', '앞으로 어떻게 하면 좋을지 함께 정해요.'] },
+              { title: '(원한다면) 사과·화해는 학교가 마련하는 자리에서', details: ['직접 다가가기보다 선생님을 통해, 관계회복 프로그램 등 전문가가 중재하는 자리에서 진행해요.', '피해 학생의 뜻이 가장 먼저예요. 원하지 않으면 무리하지 않아요.'] },
+              { title: '학교 안내에 따라 서류·일정 챙기기', details: ['학교가 알려주는 절차와 일정을 확인하고 성실히 따라요.', '모르는 건 그때그때 선생님께 물어봐요.'] },
+            ].map((item, i) => (
+              <div key={i} className="mb-3 p-4" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `3px solid ${C.amber}` }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <input type="checkbox" style={{ width: 18, height: 18, marginTop: 2, cursor: 'pointer', flexShrink: 0 }} />
+                  <div className="flex-1" style={{ minWidth: 0 }}>
+                    <p className="font-bold text-sm mb-1" style={{ color: C.ink }}>{i + 1}. {item.title}</p>
+                    {item.details.map((d, j) => (
+                      <p key={j} className="text-xs" style={{ color: C.inkSoft, marginBottom: 3 }}>• {d}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <p className="text-xs mt-1" style={{ color: C.inkMute }}>혼자 결정하지 않으셔도 됩니다. 담임·상담 선생님·보호자와 함께 진행해 보세요.</p>
+          </div>
+        )}
+
+        {effectiveTab === 'disposition' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-1"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분 안내</h3></div>
+            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>비교적 가벼운 단계에서 자주 논의되는 조치(1~4호)예요. 어떤 조치가 내려질지는 심의위원회가 정하니 미리 단정하지 않아요.</p>
+            <div className="space-y-2">
+              {Object.entries(PUNISHMENT_GUIDE).filter(([num]) => Number(num) <= 4).map(([num, g]) => (
+                <div key={num} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <span className="chip text-[11px]" style={{ background: C.amber, color: '#fff', padding: '2px 9px' }}>{num}호</span>
+                    <span className="font-semibold text-sm" style={{ color: C.ink }}>{g.name}</span>
+                  </div>
+                  <div className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{g.desc}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs mt-3 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
+              <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
+              <span>구체적인 절차·기간·생활기록부 기재 여부는 학교·지역·요건에 따라 달라요. 담임 선생님이나 두루 공익법센터에 확인해 보세요.</span>
+            </p>
+          </div>
+        )}
+
+        {effectiveTab === 'tips' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-1"><Heart size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>합의·화해 팁</h3></div>
+            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>사과·화해는 학교·전문가가 마련하는 자리에서, 피해 학생의 뜻을 존중하며 진행하는 게 가장 안전하고 도움이 돼요.</p>
+            <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>마음가짐</h4>
+            <div className="p-4 mb-5" style={{ background: C.cardWarm, borderRadius: 10 }}>
+              <p className="text-sm mb-2" style={{ color: C.ink }}>💚 진심으로 책임지고 회복하려는 마음이 가장 중요해요.</p>
+              <p className="text-sm mb-2" style={{ color: C.ink }}>💚 이번 일을 성장의 계기로 삼을 수 있어요.</p>
+              <p className="text-sm" style={{ color: C.ink }}>💚 화해를 서두르기보다 상대의 마음과 속도를 존중해요.</p>
+            </div>
+            <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>주의</h4>
+            <div className="p-4" style={{ background: '#fff5f5', borderRadius: 10, borderLeft: `3px solid ${C.danger}` }}>
+              <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ 형식적·거짓 사과는 오히려 신뢰를 잃어요.</p>
+              <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ 직접 찾아가거나 연락하기보다 학교·선생님을 통해요. (접촉 관련 조치가 있으면 특히 지켜요.)</p>
+              <p className="text-sm" style={{ color: C.danger }}>⚠️ 합의·약속을 했다면 끝까지 지켜요.</p>
+            </div>
+          </div>
+        )}
+
+        {effectiveTab === 'career' && (
+          <div className="card-base p-6 anim-fade-in">
+            <div className="flex items-center gap-2 mb-1"><BookOpen size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>생기부·진로</h3></div>
+            <p className="text-sm leading-relaxed mb-4" style={{ color: C.ink }}>조치(처분)에 따라 학교생활기록부 기재 여부와 진로에 미치는 영향이 달라질 수 있어요. 다만 이 부분은 조치의 종류, 이행 여부, 학교급·지역 기준 등 여러 요건에 따라 달라서, 여기서 단정해 말씀드리기는 어려워요.</p>
+            <div className="p-4 mb-4" style={{ background: C.cardWarm, borderRadius: 10, borderLeft: `4px solid ${C.accent}` }}>
+              <p className="text-sm" style={{ color: C.ink }}>정확한 내용은 <strong>담임 선생님·학교 학교폭력 담당 선생님</strong> 또는 <strong>두루 공익법센터</strong>에 확인해 보세요. 학교가 정확한 기준을 안내해 줄 수 있어요.</p>
+            </div>
+            <p className="text-sm" style={{ color: C.inkSoft }}>분명한 건, 지금 절차를 성실히 따르고 회복에 집중하면 앞으로 새롭게 나아갈 수 있다는 거예요.</p>
           </div>
         )}
       </div>
