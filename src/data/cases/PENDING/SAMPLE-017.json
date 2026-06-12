@@ -1,0 +1,63 @@
+{
+  "case_id": "SAMPLE-017",
+  "case_type": "sample",
+  "source_type": null,
+  "source_citation": null,
+  "decision_date": null,
+  "court": null,
+  "case_number": "(가상)",
+  "case_title_formal": "초등 따돌림 신고 단계(진행 중)",
+  "type_main": "OS",
+  "subtypes": [],
+  "role_focus": "V",
+  "stage_focus": 1,
+  "school_level": "ES",
+  "applies_to": [
+    "SV-OS-V-1-ES",
+    "SV-OS-V-2-ES",
+    "SV-OS-V-0-ES"
+  ],
+  "keywords": [
+    "초등",
+    "따돌림",
+    "신고",
+    "진행 중",
+    "피해",
+    "보호자"
+  ],
+  "original_summary": null,
+  "original_facts": [],
+  "original_facts_raw": null,
+  "original_law": null,
+  "original_disposition": null,
+  "original_full_text": null,
+  "original_text_snippet": null,
+  "friendly_title": "초등학교 따돌림 신고 단계",
+  "friendly_summary": "초등학생이 한 달간 따돌림을 당했어요. 부모님과 상담 후 학교에 신고하기로 결정했어요. 지금은 신고 접수 단계예요.",
+  "key_factors": [
+    "신고 접수 단계",
+    "보호자 상담 완료",
+    "피해 지속 약 한 달"
+  ],
+  "severity_factors": [
+    "지속성: 약 한 달"
+  ],
+  "related_laws_friendly": [],
+  "disposition_summary": "(진행 중 - 신고 단계)",
+  "recognition": "(진행중)",
+  "category": "—",
+  "sentence": "",
+  "not_recognized_reasons": [],
+  "safety_flag": false,
+  "safety_flag_reason": null,
+  "safety_banner": null,
+  "privacy_check": "Y",
+  "privacy_notes": "가상 사례 — 식별정보 없음",
+  "review_status": "검수대기",
+  "reviewer": null,
+  "reviewed_at": null,
+  "review_notes": "(가상사례) 초기 단계(신고) 예시. 처분 미확정 — recognition '(진행중)'.",
+  "stage_focus_note": null,
+  "school_level_note": null,
+  "role_focus_note": null
+}

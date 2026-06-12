@@ -1,0 +1,62 @@
+{
+  "case_id": "SAMPLE-020",
+  "case_type": "sample",
+  "source_type": null,
+  "source_citation": null,
+  "decision_date": null,
+  "court": "○○학교 학교폭력대책심의위원회",
+  "case_number": "(가상)",
+  "case_title_formal": "강요 처분 결정(경미)",
+  "type_main": "CO",
+  "subtypes": [],
+  "role_focus": "G",
+  "stage_focus": 7,
+  "school_level": "MS",
+  "applies_to": [
+    "SV-CO-G-7-MS",
+    "SV-CO-G-3-MS",
+    "SV-CO-G-4-MS"
+  ],
+  "keywords": [
+    "강요",
+    "과제",
+    "접촉금지",
+    "2호",
+    "중재"
+  ],
+  "original_summary": null,
+  "original_facts": [],
+  "original_facts_raw": null,
+  "original_law": null,
+  "original_disposition": null,
+  "original_full_text": null,
+  "original_text_snippet": null,
+  "friendly_title": "과제를 해달라고 한 사건",
+  "friendly_summary": "중학생이 친구에게 과제를 해달라고 계속 말했어요. 선생님이 지도했을 때 가해자가 빨리 인정했고, 접촉금지(2호 처분)로 종료됐어요.",
+  "key_factors": [
+    "중재 시 즉시 인정",
+    "강요 강도 경미",
+    "보복 없음"
+  ],
+  "severity_factors": [
+    "태도: 지도 단계에서 즉시 인정"
+  ],
+  "related_laws_friendly": [],
+  "disposition_summary": "접촉·협박·보복금지(2호 처분)",
+  "recognition": "인정",
+  "category": "—",
+  "sentence": "2호 처분",
+  "not_recognized_reasons": [],
+  "safety_flag": false,
+  "safety_flag_reason": null,
+  "safety_banner": null,
+  "privacy_check": "Y",
+  "privacy_notes": "가상 사례 — 식별정보 없음",
+  "review_status": "검수대기",
+  "reviewer": null,
+  "reviewed_at": null,
+  "review_notes": "(가상사례) 1~4호 낮은 단계 예시 보강용. 두루 검수 전.",
+  "stage_focus_note": null,
+  "school_level_note": null,
+  "role_focus_note": null
+}
