@@ -5,6 +5,7 @@ import {
   Users, Clock, ClipboardList, MessageCircleQuestion, ExternalLink,
   Heart, Info, ChevronDown, ChevronUp, Loader2, Home, RotateCcw,
   AlertTriangle, Code, Zap, Database, PlayCircle,
+  CheckCircle2, GraduationCap, MessageCircle,
 } from 'lucide-react';
 
 // 데이터 8종 - src/data/*.json (외부화 완료)
@@ -2253,143 +2254,124 @@ function StepResults({ data, onReset, onNewExample, onClassificationUpdate }) {
         )}
 
         {effectiveTab === 'todo' && (
-          <div className="card-base p-6 anim-fade-in">
-            <div className="flex items-center gap-2 mb-1"><Shield size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>지금 할 일</h3></div>
-            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>혼자 하지 않으셔도 돼요. 아래는 어른·학교와 함께 밟아가면 좋은 순서예요.</p>
+          <div className="card-base p-7 anim-fade-in">
+            <div className="flex items-center gap-2 mb-4"><CheckCircle2 size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>지금 할 일</h3></div>
             {[
-              { title: '담임·상담 선생님과 먼저 상의하기', details: ['지금 상황과 마음을 믿을 수 있는 어른에게 먼저 이야기해요.', '앞으로 어떻게 하면 좋을지 함께 정해요.'] },
-              { title: '(원한다면) 사과·화해는 학교가 마련하는 자리에서', details: ['직접 다가가기보다 선생님을 통해, 관계회복 프로그램 등 전문가가 중재하는 자리에서 진행해요.', '피해 학생의 뜻이 가장 먼저예요. 원하지 않으면 무리하지 않아요.'] },
-              { title: '학교 안내에 따라 서류·일정 챙기기', details: ['학교가 알려주는 절차와 일정을 확인하고 성실히 따라요.', '모르는 건 그때그때 선생님께 물어봐요.'] },
+              { priority: 1, title: '피해자와 대화 / 사과하기', details: ['진심 어린 마음으로 접근하기', '구체적으로 뭘 잘못했는지 인정하기', '예: "그때 내가 욕설한 거 잘못했어. 정말 미안해"', '※ 접촉 금지 등 조치가 있으면 직접 연락 대신 선생님을 통해 전해요'] },
+              { priority: 2, title: '담임/상담 선생님과 상담', details: ['앞으로 조심하겠다는 마음 전하기', '도움과 응원 청하기'] },
+              { priority: 3, title: '합의서 작성 (학교 양식)', details: ['양쪽이 함께 작성하기', '양쪽 모두 서명하기', '약속 기간 확인하기'] },
             ].map((item, i) => (
-              <div key={i} className="mb-3 p-4" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `3px solid ${C.amber}` }}>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <input type="checkbox" style={{ width: 18, height: 18, marginTop: 2, cursor: 'pointer', flexShrink: 0 }} />
-                  <div className="flex-1" style={{ minWidth: 0 }}>
-                    <p className="font-bold text-sm mb-1" style={{ color: C.ink }}>{i + 1}. {item.title}</p>
-                    {item.details.map((d, j) => (
-                      <p key={j} className="text-xs" style={{ color: C.inkSoft, marginBottom: 3 }}>• {d}</p>
-                    ))}
+              <div key={i} className="mb-4 p-4" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `3px solid ${C.amber}` }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer', marginTop: 2 }} />
+                  <div className="flex-1">
+                    <p className="font-bold text-sm mb-2">{item.priority}순위: {item.title}</p>
+                    {item.details.map((d, j) => <p key={j} className="text-xs" style={{ color: C.inkSoft, marginBottom: 4 }}>• {d}</p>)}
                   </div>
                 </div>
               </div>
             ))}
-            <p className="text-xs mt-1" style={{ color: C.inkMute }}>혼자 결정하지 않으셔도 됩니다. 담임·상담 선생님·보호자와 함께 진행해 보세요.</p>
           </div>
         )}
 
         {effectiveTab === 'disposition' && (
-          <div className="card-base p-6 anim-fade-in">
-            <div className="flex items-center gap-2 mb-1"><Scale size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분 안내</h3></div>
-            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>아직 처분이 정해지지 않은 단계예요. 어떤 조치가 내려질지는 심의위원회가 정하니 미리 단정하지 않아요. 대신 가장 비슷한 사례의 결과를 참고로 보여드려요.</p>
-
-            {topMatchedCase && (topMatchedCase.disposition_summary || topMatchedCase.recognition) && (
-              <div className="mb-5 p-5" style={{ background: C.cardWarm, borderRadius: 12, borderLeft: `4px solid ${C.accent}` }}>
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <span className="chip text-[10px]" style={{ background: C.accent, color: '#fff', padding: '2px 9px' }}>가장 비슷한 사례</span>
-                  {topMatchedCase.recognition && <span className="chip text-[10px]" style={{ background: C.bg, color: C.inkSoft, padding: '2px 9px' }}>{topMatchedCase.recognition}</span>}
+          <div className="card-base p-7 anim-fade-in">
+            <div className="flex items-center gap-2 mb-4"><FileText size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>처분 안내</h3></div>
+            <div className="p-6" style={{ background: C.cardWarm, borderRadius: 12 }}>
+              <h4 className="font-bold text-base mb-3">학교장 자체해결 (합의)</h4>
+              <p className="text-sm mb-4" style={{ color: C.inkSoft }}>양쪽이 함께 이야기해서 합의하는 방식이에요. 가장 좋은 결과라고 할 수 있어요.</p>
+              <div className="mb-6">
+                <p className="font-semibold text-sm mb-3">실제 진행 일정</p>
+                <div className="space-y-2">
+                  <p className="text-sm">→ <span style={{ fontWeight: 600 }}>이번 주</span> 담임 선생님과 만남</p>
+                  <p className="text-sm">→ <span style={{ fontWeight: 600 }}>친구와 함께</span> 대화하기</p>
+                  <p className="text-sm">→ <span style={{ fontWeight: 600 }}>합의서</span> 작성 (양쪽 서명)</p>
+                  <p className="text-sm font-bold" style={{ color: C.accent }}>→ 끝! (특별한 처분 없음)</p>
                 </div>
-                {topMatchedCase.friendly_title && <p className="font-semibold text-sm mb-1" style={{ color: C.ink }}>{topMatchedCase.friendly_title}</p>}
-                {topMatchedCase.disposition_summary && <p className="text-sm" style={{ color: C.ink }}>결과: <strong>{topMatchedCase.disposition_summary}</strong></p>}
-                <p className="text-xs mt-2 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
-                  <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
-                  <span>이 사례가 당신과 같은 결과로 이어진다는 뜻은 아니에요. 처분은 사실관계에 따라 심의위원회가 정해요.</span>
-                </p>
               </div>
-            )}
-
-            <p className="font-semibold text-sm mb-2" style={{ color: C.ink }}>보통 이렇게 흘러가요</p>
-            <div className="mb-5 p-4" style={{ background: C.bg, borderRadius: 10 }}>
-              <p className="text-sm mb-1" style={{ color: C.ink }}>→ 담임·상담 선생님과 먼저 의논해요.</p>
-              <p className="text-sm mb-1" style={{ color: C.ink }}>→ (양측이 동의하면) 학교가 마련하는 자리에서 대화·관계회복을 해요. 피해 학생의 뜻이 우선이에요.</p>
-              <p className="text-sm mb-1" style={{ color: C.ink }}>→ 합의서가 필요하면 보호자·선생님과 함께 작성해요.</p>
-              <p className="text-sm font-semibold" style={{ color: C.accent }}>→ 비교적 짧게 마무리되는 경우가 많아요 (상황·학교에 따라 달라요).</p>
+              <div style={{ background: '#f0f8f0', padding: 12, borderRadius: 8 }}>
+                <p className="text-sm font-semibold mb-2">💚 생기부 기록</p>
+                <p className="text-sm">기록이 남지 않을 가능성이 매우 높아요. 깨끗한 출발이 가능해요.</p>
+              </div>
             </div>
-
-            <p className="font-semibold text-sm mb-2" style={{ color: C.ink }}>이 단계에서 자주 논의되는 조치 (1~4호)</p>
-            <div className="space-y-2">
-              {Object.entries(PUNISHMENT_GUIDE).filter(([num]) => Number(num) <= 4).map(([num, g]) => (
-                <div key={num} style={{ background: C.bg, borderRadius: 10, padding: '10px 12px' }}>
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="chip text-[11px]" style={{ background: C.amber, color: '#fff', padding: '2px 9px' }}>{num}호</span>
-                    <span className="font-semibold text-sm" style={{ color: C.ink }}>{g.name}</span>
-                  </div>
-                  <div className="text-xs leading-relaxed" style={{ color: C.inkSoft }}>{g.desc}</div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs mt-3 flex items-start gap-1.5" style={{ color: C.amberDeep }}>
-              <AlertCircle size={12} style={{ marginTop: 3, flexShrink: 0 }} />
-              <span>구체적인 절차·기간·생활기록부 기재 여부는 학교·지역·요건에 따라 달라요. 담임 선생님이나 두루 공익법센터에 확인해 보세요.</span>
-            </p>
           </div>
         )}
 
         {effectiveTab === 'tips' && (
-          <div className="card-base p-6 anim-fade-in">
-            <div className="flex items-center gap-2 mb-1"><Heart size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>합의·화해 팁</h3></div>
-            <p className="text-sm mb-4" style={{ color: C.inkSoft }}>사과·화해는 학교·전문가가 마련하는 자리에서, 피해 학생의 뜻을 존중하며 진행하는 게 가장 안전하고 도움이 돼요.</p>
-            <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>이렇게 마음을 전할 수 있어요 (학교가 마련한 자리에서)</h4>
-            <div className="mb-5">
+          <div className="card-base p-7 anim-fade-in">
+            <div className="flex items-center gap-2 mb-4"><MessageCircle size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>합의·화해 팁</h3></div>
+            <div className="mb-6">
+              <h4 className="font-semibold text-base mb-3">대화 팁</h4>
               {[
-                { title: '진심을 먼저', detail: '"내가 잘못했어. 진짜 미안해" — 변명 없이.' },
-                { title: '상대의 마음 이해', detail: '"얼마나 속상했을지 생각하니 미안해" — 감정을 인정해요.' },
-                { title: '앞으로의 다짐', detail: '"앞으로 절대 그러지 않을게" — 구체적으로 말해요.' },
+                { title: '1) 먼저 진심을 전하세요', detail: '"내가 잘못했어. 진짜 미안해" — 변명하지 않기' },
+                { title: '2) 상대방 마음을 이해하세요', detail: '"네가 얼마나 상처받았을까 미안해" — 감정 인정' },
+                { title: '3) 앞으로의 다짐', detail: '"앞으로 절대 욕하지 않겠어" — 구체적으로 말하기' },
               ].map((t, i) => (
-                <div key={i} className="mb-2 p-3" style={{ background: C.bg, borderRadius: 8 }}>
-                  <p className="font-semibold text-sm mb-0.5" style={{ color: C.ink }}>{t.title}</p>
+                <div key={i} className="mb-3 p-4" style={{ background: C.bg, borderRadius: 8 }}>
+                  <p className="font-semibold text-sm mb-1">{t.title}</p>
                   <p className="text-sm" style={{ color: C.inkSoft }}>{t.detail}</p>
                 </div>
               ))}
             </div>
-            <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>마음가짐</h4>
-            <div className="p-4 mb-5" style={{ background: C.cardWarm, borderRadius: 10 }}>
-              <p className="text-sm mb-2" style={{ color: C.ink }}>💚 진심으로 책임지고 회복하려는 마음이 가장 중요해요.</p>
-              <p className="text-sm mb-2" style={{ color: C.ink }}>💚 이번 일을 성장의 계기로 삼을 수 있어요.</p>
-              <p className="text-sm" style={{ color: C.ink }}>💚 화해를 서두르기보다 상대의 마음과 속도를 존중해요.</p>
+            <div className="mb-6">
+              <h4 className="font-semibold text-base mb-3">마음가짐</h4>
+              <div className="p-4" style={{ background: C.cardWarm, borderRadius: 8 }}>
+                <p className="text-sm mb-2">💚 관계를 다시 시작할 기회</p>
+                <p className="text-sm mb-2">💚 성장할 수 있는 경험</p>
+                <p className="text-sm">💚 친구도 대부분 받아줄 준비 중</p>
+              </div>
             </div>
-            <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>주의</h4>
-            <div className="p-4" style={{ background: '#fff5f5', borderRadius: 10, borderLeft: `3px solid ${C.danger}` }}>
-              <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ 형식적·거짓 사과는 오히려 신뢰를 잃어요.</p>
-              <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ 직접 찾아가거나 연락하기보다 학교·선생님을 통해요. (접촉 관련 조치가 있으면 특히 지켜요.)</p>
-              <p className="text-sm" style={{ color: C.danger }}>⚠️ 합의·약속을 했다면 끝까지 지켜요.</p>
+            <div>
+              <h4 className="font-semibold text-base mb-3">주의사항</h4>
+              <div className="p-4" style={{ background: '#fff5f5', borderRadius: 8, borderLeft: `3px solid ${C.danger}` }}>
+                <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ 거짓 사과하지 않기</p>
+                <p className="text-sm mb-2" style={{ color: C.danger }}>⚠️ "미안하다" 반복만 하지 않기</p>
+                <p className="text-sm" style={{ color: C.danger }}>⚠️ 합의 후 약속 꼭 지키기 (위반하면 처분 상향)</p>
+              </div>
             </div>
           </div>
         )}
 
         {effectiveTab === 'career' && (
-          <div className="card-base p-6 anim-fade-in">
-            <div className="flex items-center gap-2 mb-1"><BookOpen size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>생기부·진로</h3></div>
-            <p className="text-sm leading-relaxed mb-4" style={{ color: C.ink }}>조치(처분)에 따라 학교생활기록부 기재가 달라질 수 있어요. 아래는 일반적인 안내이고, 실제로는 조치 종류·이행 여부·학교급·졸업 시 삭제 심의 등 여러 요건에 따라 달라져요.</p>
-            <div style={{ overflowX: 'auto' }} className="mb-4">
-              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: C.cardWarm, borderBottom: `2px solid ${C.line}` }}>
-                    <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>조치</th>
-                    <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>생기부 일반 안내</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { proc: '1~3호 (서면사과·접촉금지·학교내 봉사)', record: '요건을 지키면 기재가 유보될 수 있어요' },
-                    { proc: '4호 (사회봉사)', record: '기재될 수 있어요' },
-                    { proc: '학교장 자체해결·합의', record: '처분이 아니라, 별도 기재 대상이 아닐 수 있어요' },
-                  ].map((row, i) => (
-                    <tr key={i} style={{ borderBottom: `1px solid ${C.lineSoft}` }}>
-                      <td style={{ padding: 10, color: C.ink }}>{row.proc}</td>
-                      <td style={{ padding: 10, color: C.inkSoft }}>{row.record}</td>
+          <div className="card-base p-7 anim-fade-in">
+            <div className="flex items-center gap-2 mb-4"><GraduationCap size={18} color={C.accent} /><h3 className="font-semibold text-lg" style={{ color: C.ink }}>생기부·진로 영향</h3></div>
+            <div className="mb-6 p-5" style={{ background: C.cardWarm, borderRadius: 12 }}>
+              <h4 className="font-semibold text-sm mb-3">당신의 경우 ({data.school_level === 'MS' ? '중학생' : data.school_level === 'HS' ? '고등학생' : '학생'})</h4>
+              <p className="text-sm">{data.school_level === 'MS' ? '중학생 기록은 대부분 남지 않아요. 고등학교 때 깨끗한 출발이 가능해요.' : data.school_level === 'HS' ? '고등학생 기록이 남을 수 있지만, 합의로 해결되면 영향을 최소화할 수 있어요.' : '처분 기록 영향은 제한적이에요. 중요한 건 앞으로의 행동이에요.'}</p>
+            </div>
+            <div className="mb-6">
+              <h4 className="font-semibold text-base mb-3">처분별 생기부 기록</h4>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: C.bg, borderBottom: `1px solid ${C.line}` }}>
+                      <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>처분</th>
+                      <th style={{ padding: 10, textAlign: 'left', fontWeight: 600 }}>기록</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {[
+                      { proc: '1호 서면사과', record: '✓ 안 남음' },
+                      { proc: '2호 접촉금지', record: '✓ 안 남음' },
+                      { proc: '3호 학교내 봉사', record: '△ 활동만' },
+                      { proc: '4호 사회봉사', record: '✓ 기록됨' },
+                      { proc: '자체해결·합의', record: '✓ 안 남음' },
+                    ].map((row, i) => (
+                      <tr key={i} style={{ borderBottom: `1px solid ${C.lineSoft}` }}>
+                        <td style={{ padding: 10 }}>{row.proc}</td>
+                        <td style={{ padding: 10, color: C.accent, fontWeight: 500 }}>{row.record}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs mt-2" style={{ color: C.amberDeep }}>※ 정확한 기재 여부·기간은 학교(담임·학폭 담당)나 두루 공익법센터에 꼭 확인하세요. 학교급·졸업 시 삭제 심의 등에 따라 달라요.</p>
             </div>
-            <div className="p-4 mb-4" style={{ background: C.cardWarm, borderRadius: 10, borderLeft: `4px solid ${C.amberDeep}` }}>
-              <p className="text-sm" style={{ color: C.ink }}>⚠️ 위 표는 일반 안내예요. <strong>정확한 기재 여부·기간은 반드시 담임 선생님·학교 학교폭력 담당 또는 두루 공익법센터에 확인</strong>하세요. 학교급·졸업 시 삭제 심의 등 변수가 있어요.</p>
-            </div>
-            <div style={{ background: C.bg, padding: 14, borderRadius: 10 }}>
-              <h4 className="font-semibold text-sm mb-2" style={{ color: C.ink }}>앞으로</h4>
-              <p className="text-sm mb-1" style={{ color: C.ink }}>✓ 낮은 단계는 비교적 짧게 마무리되는 경우가 많아요 (상황·학교에 따라 달라요).</p>
-              <p className="text-sm mb-1" style={{ color: C.ink }}>✓ 절차를 성실히 따르고 회복에 집중하면 새롭게 나아갈 수 있어요.</p>
-              <p className="text-sm" style={{ color: C.accent, fontWeight: 600 }}>✓ "끝"이 아니라 "성장의 기회"로 삼을 수 있어요.</p>
+            <div style={{ background: C.bg, padding: 12, borderRadius: 8 }}>
+              <h4 className="font-semibold text-sm mb-3">앞으로</h4>
+              <p className="text-sm mb-2">✓ 1~4주 내 모든 절차 완료</p>
+              <p className="text-sm mb-2">✓ 이후 완전히 새로운 시작 가능</p>
+              <p className="text-sm" style={{ color: C.accent, fontWeight: 600 }}>✓ "학교폭력이 끝"이 아니라 "성장의 기회"로 전환</p>
             </div>
           </div>
         )}
