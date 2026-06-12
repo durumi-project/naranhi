@@ -543,8 +543,7 @@ function Header({ onHome, showBack, onBack }) {
             <Scale size={18} color="white" strokeWidth={2.2} />
           </div>
           <div className="flex flex-col items-start leading-tight">
-            <span className="font-display text-lg font-bold" style={{ color: C.ink }}>나란히</span>
-            <span className="text-[11px]" style={{ color: C.inkMute }}>ver.3</span>
+            <img src="/durumi_logo.jpeg" alt="나란히" style={{ height: '36px', width: 'auto' }} />
           </div>
         </button>
         <div className="flex items-center gap-2">
